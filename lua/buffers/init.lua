@@ -1,6 +1,6 @@
 ---@class buffers.Config
 ---@field width? integer window width
----@field min_height? integer minimum height of window
+---@field min_height? integer minimum window height
 ---@field position? 'center'|'bottom_right'|'top_right' window position
 ---@field border? 'none'|'single'|'double'|'rounded'|'solid'|'shadow'|string[] window border
 ---@field chars? string first available character from buffer name, found in this list, will be used as keymap
