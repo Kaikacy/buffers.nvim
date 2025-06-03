@@ -6,5 +6,5 @@ vim.g.loaded_buffers = 1
 local buffers = require("buffers")
 
 vim.api.nvim_create_user_command("BuffersToggle", function(_)
-	buffers.toggle()
+	buffers.toggle(vim.g.buffers_config)
 end, {})
