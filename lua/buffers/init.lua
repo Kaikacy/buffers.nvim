@@ -11,6 +11,7 @@ local M = {}
 local state = {
 	buf = -1,
 	win = -1,
+	cur_buf_line = nil,
 }
 
 ---@param opts buffers.Config
@@ -56,7 +57,7 @@ end
 
 local function get_buffer_table(buffers, chars, backup_chars)
 	local out = require("buffers.ordered-table")()
-	for _, bufnr in ipairs(buffers) do
+	for i, bufnr in ipairs(buffers) do
 		local fullname = vim.api.nvim_buf_get_name(bufnr)
 		local name = vim.fn.fnamemodify(fullname, ":t")
 		if name == "" then
@@ -75,6 +76,9 @@ local function get_buffer_table(buffers, chars, backup_chars)
 		end
 		if char then
 			out:insert(char, bufnr)
+			if vim.api.nvim_get_current_buf() == bufnr then
+				state.cur_buf_line = i
+			end
 		end
 	end
 	return out
@@ -163,7 +167,7 @@ function M.toggle(opts)
 
 	vim.bo[buf].modifiable = false
 	vim.bo[buf].readonly = true
-	vim.api.nvim_win_set_cursor(win, { 1, 0 })
+	vim.api.nvim_win_set_cursor(win, { state.cur_buf_line or 1, 0 })
 end
 
 return M
