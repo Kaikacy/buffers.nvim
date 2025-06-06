@@ -6,7 +6,6 @@ This plugin is to meet my personal requirements, which doesn't include colors or
 # Screenshot
 ![w_14:21:18_Jun-04](https://github.com/user-attachments/assets/5eb9b122-21aa-4624-93fc-3ace0b58091c)
 
-
 # Installation
 Just use any package manager to install.
 `setup()` function is not provided, instead see [configuration](#configuration)
@@ -16,12 +15,13 @@ Single command, `:BuffersToggle`, toggles buffer window.
 In this window, every buffer is filtered using **currently** non-costumizable predicate,
 that is: `buflisted` option is true AND buffer has non-empty name.
 
-From this window, any of the buffer can be opened using provided key next to it and buffer window is closed.
+From this window, any buffer can be opened using provided key next to it and buffers window is closed.
 
-I recommend mapping `BuffersTogle` to single keystroke for fastest navigation
+I recommend mapping `BuffersToggle` to single key for fastest navigation
 
 # Configuration
-Whole configuration is done via `vim.g.buffers_config` table which is checked every time buffers window opens, so it can be tweaked, without leaving neovim.
+Whole configuration is done via `vim.g.buffers_config` table which is checked every time buffers window opens,
+so it can be tweaked, without reloading.
 ## Defaults
 ```lua
 ---@type buffers.Config
