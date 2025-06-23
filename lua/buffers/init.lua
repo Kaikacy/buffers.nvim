@@ -95,7 +95,7 @@ local function register_buffers(buffer_table, base_buf, win)
 		vim.keymap.set("n", char, function()
 			vim.api.nvim_win_hide(win)
 			vim.api.nvim_set_current_buf(bufnr)
-		end, { buffer = base_buf })
+		end, { buffer = base_buf, nowait = true })
 	end
 	vim.api.nvim_buf_set_lines(base_buf, 0, #lines, false, lines)
 end
