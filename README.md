@@ -19,6 +19,17 @@ From this window, any buffer can be opened using provided key next to it and buf
 
 I recommend mapping `BuffersToggle` to single key for fastest navigation
 
+> **WARNING**: if you're using which-key.nvim, some keymaps in buffers window might be delayed
+> I recommend disabling which-key for buffers filetype, like so:
+```lua
+{
+	-- other which-key option
+	disable = {
+		ft = {"buffers"}
+	}
+}
+```
+
 # Configuration
 Whole configuration is done via `vim.g.buffers_config` table which is checked every time buffers window opens,
 so it can be tweaked, without reloading.
@@ -26,14 +37,14 @@ so it can be tweaked, without reloading.
 ```lua
 ---@type buffers.Config
 {
-  width = 70, -- window width (longer lines are not yet handled)
-  min_heigh = 6, -- minimum window height
-  position = 'bottom_right', -- window position (can be 'bottom_right', 'top_right' or 'center')
-  border = 'single', -- window border (accepts same values as vim.api.keyset.win_config.border)
-  -- characters that can be used as a keymap for switching buffers
-  chars =  "qwertyuiopasdfghjklzxcvbnm1234567890",
-  -- if non of the characters from `chars` is available use this list (see #internals for more info)
-  backup_chars = "QWERTYUIOPASDFGHJKLZXCVBNM_-"
+	width = 70, -- window width (longer lines are not yet handled)
+	min_heigh = 6, -- minimum window height
+	position = 'bottom_right', -- window position (can be 'bottom_right', 'top_right' or 'center')
+	border = 'single', -- window border (accepts same values as vim.api.keyset.win_config.border)
+	-- characters that can be used as a keymap for switching buffers
+	chars =  "qwertyuiopasdfghjklzxcvbnm1234567890",
+	-- if non of the characters from `chars` is available use this list (see #internals for more info)
+	backup_chars = "QWERTYUIOPASDFGHJKLZXCVBNM_-"
 }
 ```
 
