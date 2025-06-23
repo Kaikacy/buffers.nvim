@@ -142,6 +142,7 @@ function M.toggle(opts)
 	local buf = state.buf
 	if not vim.api.nvim_buf_is_valid(buf) then
 		buf = vim.api.nvim_create_buf(false, true)
+		vim.api.nvim_buf_set_name(buf, "buffers")
 		vim.bo[buf].buftype = "nofile"
 		vim.bo[buf].filetype = "buffers"
 		state.buf = buf
