@@ -6,6 +6,7 @@
 ---@field chars? string first available character from buffer name, found in this list, will be used as keymap
 ---@field backup_chars? string if every character from buffer name is unavailable, then this list gets checked
 ---@field filter? fun(bufnr: integer): boolean checks if bufnr should be included in buffers table
+---@field close_keys? string[] which keys will hide buffers window, without warning, when pressed
 
 local M = {}
 
@@ -25,10 +26,11 @@ local function with_defaults(opts)
 		border = opts.border or "single",
 		chars = opts.chars or "qwertyuiopasdfghjklzxcvbnm1234567890",
 		backup_chars = opts.backup_chars or "QWERTYUIOPASDFGHJKLZXCVBNM_-",
-		filter = function(bufnr)
+		filter = opts.filter or function(bufnr)
 			return vim.api.nvim_get_option_value("buflisted", { buf = bufnr })
 				and vim.api.nvim_buf_get_name(bufnr) ~= ""
 		end,
+		close_keys = opts.close_keys or { "<Esc>" },
 	}
 end
 
@@ -176,9 +178,11 @@ function M.toggle(opts)
 			return
 		end
 		char = vim.fn.keytrans(char)
-		if char == "<Esc>" then
-			vim.api.nvim_win_hide(win)
-			return
+		for _, key in ipairs(opts.close_keys) do
+			if char == key then
+				vim.api.nvim_win_hide(win)
+				return
+			end
 		end
 		for c, buf in buffer_table:orderedPairs() do
 			if char == c then

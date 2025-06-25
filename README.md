@@ -40,6 +40,11 @@ so it can be tweaked, without reloading.
 		return vim.api.nvim_get_option_value("buflisted", { buf = bufnr })
 			and vim.api.nvim_buf_get_name(bufnr) ~= ""
 	end,
+	-- which keys are used to close the buffers window, without warning
+	-- note 1: case matters, to get exact format for a key, run :echo keytrans(getcharstr())
+	-- then press desired key with modifiers to get the output
+	-- note 2: <C-c> always closes the window
+	close_keys = {"<Esc>"}
 }
 ```
 
@@ -74,6 +79,8 @@ Accidental overlap of keymaps is pretty much impossible.
 For actually mapping character to its buffers, `getcharstr` function, wrapped in `keytrans` is used.
 Before commit `a541273`, I was using keymaps which where problematic!
 [thanks to this comment](https://www.reddit.com/r/neovim/comments/1lhuqgp/comment/mzaa6u5/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)
+`close_keys` option was added because of `getcharstr`,
+so `BuffersToggle` command is less useful, and can just be `BuffersOpen`, but it still functions as toggle.
 
 # Contribution
 PRs and Issues are welcome!
