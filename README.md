@@ -19,17 +19,6 @@ From this window, any buffer can be opened using provided key next to it and buf
 
 I recommend mapping `BuffersToggle` to single key for fastest navigation
 
-> **WARNING**: if you're using which-key.nvim, some keymaps in buffers window might be delayed
-> I recommend disabling which-key for buffers filetype, like so:
-```lua
-{
-	-- other which-key option
-	disable = {
-		ft = {"buffers"}
-	}
-}
-```
-
 # Configuration
 Whole configuration is done via `vim.g.buffers_config` table which is checked every time buffers window opens,
 so it can be tweaked, without reloading.

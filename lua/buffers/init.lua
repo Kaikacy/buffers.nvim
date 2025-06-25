@@ -27,6 +27,12 @@ local function with_defaults(opts)
 	}
 end
 
+---@param msg string
+---@param level integer|nil
+local function notify(msg, level)
+	vim.notify(msg, level, { title = "Buffers.nvim" })
+end
+
 local function filter_buffers()
 	return vim.tbl_filter(function(bufnr)
 		return vim.api.nvim_get_option_value("buflisted", { buf = bufnr }) and vim.api.nvim_buf_get_name(bufnr) ~= ""
@@ -70,7 +76,7 @@ local function get_buffer_table(buffers, chars, backup_chars)
 				char = get_char_dumb(out, chars .. backup_chars)
 				if not char then
 					-- super rare to get here
-					vim.notify("No available character left from chars and backup_chars", vim.log.levels.ERROR, {})
+					notify("No available character left from chars and backup_chars", vim.log.levels.ERROR)
 				end
 			end
 		end
@@ -84,7 +90,7 @@ local function get_buffer_table(buffers, chars, backup_chars)
 	return out
 end
 
-local function register_buffers(buffer_table, base_buf, win)
+local function register_buffers(buffer_table, base_buf)
 	vim.bo[base_buf].modifiable = true
 	vim.bo[base_buf].readonly = false
 	local lines = {}
@@ -92,10 +98,6 @@ local function register_buffers(buffer_table, base_buf, win)
 		local name = vim.api.nvim_buf_get_name(bufnr)
 		name = vim.fn.fnamemodify(name, ":~:.")
 		table.insert(lines, char .. " | " .. name)
-		vim.keymap.set("n", char, function()
-			vim.api.nvim_win_hide(win)
-			vim.api.nvim_set_current_buf(bufnr)
-		end, { buffer = base_buf, nowait = true })
 	end
 	vim.api.nvim_buf_set_lines(base_buf, 0, #lines, false, lines)
 end
@@ -111,7 +113,7 @@ local function get_win_config(opts, buffer_count)
 		col = (vim.o.columns - opts.width) * 0.5
 		row = (vim.o.lines - height) * 0.5
 	elseif opts.position ~= "bottom_right" then
-		vim.notify("Buffers.nvim: position must be `top_right`, `center` or `bottom_right`", vim.log.levels.ERROR, {})
+		notify("Position must be `top_right`, `center` or `bottom_right`", vim.log.levels.ERROR)
 		return nil
 	end
 
@@ -139,36 +141,50 @@ function M.toggle(opts)
 		return
 	end
 
-	local buf = state.buf
-	if not vim.api.nvim_buf_is_valid(buf) then
-		buf = vim.api.nvim_create_buf(false, true)
-		vim.api.nvim_buf_set_name(buf, "buffers")
-		vim.bo[buf].buftype = "nofile"
-		vim.bo[buf].filetype = "buffers"
-		state.buf = buf
+	local base_buf = state.buf
+	if not vim.api.nvim_buf_is_valid(base_buf) then
+		base_buf = vim.api.nvim_create_buf(false, true)
+		vim.api.nvim_buf_set_name(base_buf, "buffers")
+		vim.bo[base_buf].buftype = "nofile"
+		vim.bo[base_buf].filetype = "buffers"
+		state.buf = base_buf
 	end
 	local win = state.win
 	if not vim.api.nvim_win_is_valid(win) then
-		win = vim.api.nvim_open_win(buf, true, win_config)
+		win = vim.api.nvim_open_win(base_buf, true, win_config)
 		state.win = win
 	else
 		vim.api.nvim_win_hide(win)
 		return
 	end
 
-	vim.keymap.del("n", "q", { buffer = buf })
-	vim.keymap.set("n", "<C-c>", function()
-		vim.api.nvim_win_hide(win)
-	end, { buffer = buf })
-	vim.keymap.set("n", "<Esc>", function()
-		vim.api.nvim_win_hide(win)
-	end, { buffer = buf })
+	register_buffers(buffer_table, base_buf)
 
-	register_buffers(buffer_table, buf, win)
-
-	vim.bo[buf].modifiable = false
-	vim.bo[buf].readonly = true
+	vim.bo[base_buf].modifiable = false
+	vim.bo[base_buf].readonly = true
 	vim.api.nvim_win_set_cursor(win, { state.cur_buf_line or 1, 0 })
+
+	vim.schedule(function()
+		local ok, char = pcall(vim.fn.getcharstr)
+		if not ok then
+			vim.api.nvim_win_hide(win)
+			return
+		end
+		char = vim.fn.keytrans(char)
+		if char == "<Esc>" then
+			vim.api.nvim_win_hide(win)
+			return
+		end
+		for c, buf in buffer_table:orderedPairs() do
+			if char == c then
+				vim.api.nvim_win_hide(win)
+				vim.api.nvim_set_current_buf(buf)
+				return
+			end
+		end
+		notify("No buffer bound to '" .. char .. "'", vim.log.levels.WARN)
+		vim.api.nvim_win_hide(win)
+	end)
 end
 
 return M
