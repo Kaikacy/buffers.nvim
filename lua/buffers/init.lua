@@ -5,6 +5,7 @@
 ---@field border? 'none'|'single'|'double'|'rounded'|'solid'|'shadow'|string[] window border
 ---@field chars? string first available character from buffer name, found in this list, will be used as keymap
 ---@field backup_chars? string if every character from buffer name is unavailable, then this list gets checked
+---@field filter? fun(bufnr: integer): boolean checks if bufnr should be included in buffers table
 
 local M = {}
 
@@ -24,6 +25,10 @@ local function with_defaults(opts)
 		border = opts.border or "single",
 		chars = opts.chars or "qwertyuiopasdfghjklzxcvbnm1234567890",
 		backup_chars = opts.backup_chars or "QWERTYUIOPASDFGHJKLZXCVBNM_-",
+		filter = function(bufnr)
+			return vim.api.nvim_get_option_value("buflisted", { buf = bufnr })
+				and vim.api.nvim_buf_get_name(bufnr) ~= ""
+		end,
 	}
 end
 
@@ -33,9 +38,9 @@ local function notify(msg, level)
 	vim.notify(msg, level, { title = "Buffers.nvim" })
 end
 
-local function filter_buffers()
+local function filter_buffers(filter_func)
 	return vim.tbl_filter(function(bufnr)
-		return vim.api.nvim_get_option_value("buflisted", { buf = bufnr }) and vim.api.nvim_buf_get_name(bufnr) ~= ""
+		return filter_func(bufnr)
 	end, vim.api.nvim_list_bufs())
 end
 
@@ -133,7 +138,7 @@ end
 function M.toggle(opts)
 	---@diagnostic disable-next-line: redefined-local
 	local opts = with_defaults(opts or {})
-	local buffers = filter_buffers()
+	local buffers = filter_buffers(opts.filter)
 	local buffer_table = get_buffer_table(buffers, opts.chars, opts.backup_chars)
 
 	local win_config = get_win_config(opts, #buffers)
