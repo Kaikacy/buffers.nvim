@@ -106,6 +106,7 @@ local function register_buffers(buffer_table, base_buf)
 		name = vim.fn.fnamemodify(name, ":~:.")
 		table.insert(lines, char .. " | " .. name)
 	end
+	vim.api.nvim_buf_set_lines(base_buf, 0, -1, false, {})
 	vim.api.nvim_buf_set_lines(base_buf, 0, #lines, false, lines)
 end
 
