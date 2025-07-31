@@ -101,7 +101,7 @@ local function register_buffers(buffer_table, base_buf)
 	vim.bo[base_buf].modifiable = true
 	vim.bo[base_buf].readonly = false
 	local lines = {}
-	for char, bufnr in buffer_table:orderedPairs() do
+	for char, bufnr in buffer_table:ordered_pairs() do
 		local name = vim.api.nvim_buf_get_name(bufnr)
 		name = vim.fn.fnamemodify(name, ":~:.")
 		table.insert(lines, char .. " | " .. name)
@@ -180,12 +180,12 @@ function M.toggle(opts)
 		end
 		char = vim.fn.keytrans(char)
 		for _, key in ipairs(opts.close_keys) do
-			if char == key then
+			if char:lower() == key:lower() then
 				vim.api.nvim_win_hide(win)
 				return
 			end
 		end
-		for c, buf in buffer_table:orderedPairs() do
+		for c, buf in buffer_table:ordered_pairs() do
 			if char == c then
 				vim.api.nvim_win_hide(win)
 				vim.api.nvim_set_current_buf(buf)
