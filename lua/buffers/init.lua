@@ -192,8 +192,8 @@ function M.toggle(opts)
 				return
 			end
 		end
-		notify("No buffer bound to '" .. char .. "'", vim.log.levels.WARN)
 		vim.api.nvim_win_hide(win)
+		notify("No buffer bound to '" .. char .. "'", vim.log.levels.WARN)
 	end)
 end
 
