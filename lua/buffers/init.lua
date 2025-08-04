@@ -8,7 +8,7 @@
 ---@field filter? fun(bufnr: integer): boolean checks if bufnr should be included in buffers table
 ---@field close_keys? string[] which keys will hide buffers window, without warning, when pressed
 ---@field separator? string separator between char and buffer name
----@field formatter? 'relative_path'|'filename_first' how to format buffer name
+---@field formatter? 'relative_path'|'filename_first'|formatter how to format buffer name
 
 local M = {}
 
@@ -106,7 +106,7 @@ local function get_buffer_table(buffers, chars, backup_chars)
 end
 
 local function register_buffers(buffer_table, base_buf, separator, formatter)
-	local format = formatters[formatter]
+	local format = type(formatter) == "string" and formatters[formatter] or formatter
 	if not format then
 		notify(("Formatter '%s' is not available"):format(formatter))
 		return

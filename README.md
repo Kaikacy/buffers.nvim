@@ -32,7 +32,6 @@ so it can be tweaked, without reloading.
 	position = 'bottom_right', -- window position (can be 'bottom_right', 'top_right' or 'center')
 	border = 'single', -- window border (accepts same values as vim.api.keyset.win_config.border)
 	separator = ' | ' -- separator between char and buffer name
-	formatter = 'relative_path' -- how to format buffer names ('relative_path' or 'filename_first')
 	-- characters that can be bound to buffers
 	chars = "qwertyuiopasdfghjklzxcvbnm1234567890",
 	-- if non of the characters from `chars` is available use this list (see #internals for more info)
@@ -42,6 +41,9 @@ so it can be tweaked, without reloading.
 		return vim.api.nvim_get_option_value("buflisted", { buf = bufnr })
 			and vim.api.nvim_buf_get_name(bufnr) ~= ""
 	end,
+	-- how to format buffer names ('relative_path', 'filename_first' or custom function)
+	-- for function usage see #formatters
+	formatter = 'relative_path' 
 	-- which keys are used to close the buffers window, without warning
 	-- note: <C-c> always closes the window
 	close_keys = {"<Esc>"}
@@ -87,11 +89,12 @@ so `BuffersToggle` command is less useful, and can just be `BuffersOpen`, but it
 ## Formatters
 each formatter is a function that takes full path to a file and returns two values:
 1. `string` formatted string to be used
-2. `integer[]` pair which denotes range for highlighting directory names with `Comment` hl group.
-This makes actual file names stand out more. Range is end-exclusive.
+2. `integer[]` pair which denotes range for highlighting with `Comment` hl group.
+This should be used for less important info, like file path to make file name stand out more.
+Range is end-exclusive.
 
 # TODO
-- [ ] add custom formatting option
+- [x] add custom formatting option
 - [ ] add icons
 - [ ] add more highlights
 - [ ] add docs
