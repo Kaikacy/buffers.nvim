@@ -119,7 +119,7 @@ local function register_buffers(buffer_table, base_buf, separator, formatter)
 		local formatted, range = format(vim.api.nvim_buf_get_name(bufnr))
 		local line = char .. separator .. formatted
 		table.insert(lines, line)
-		table.insert(ranges, range)
+		table.insert(ranges, range or { 0, 0 })
 	end
 	vim.api.nvim_buf_clear_namespace(base_buf, ns, 0, -1)
 	vim.api.nvim_buf_set_lines(base_buf, 0, -1, false, {})
