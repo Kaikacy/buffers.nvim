@@ -7,8 +7,14 @@
 ---@field backup_chars? string if every character from buffer name is unavailable, then this list gets checked
 ---@field filter? fun(bufnr: integer): boolean checks if bufnr should be included in buffers table
 ---@field close_keys? string[] which keys will hide buffers window, without warning, when pressed
+---@field separator? string separator between char and buffer name
+---@field formatter? 'relative_path'|'filename_first' how to format buffer name
 
 local M = {}
+
+local formatters = require("buffers.formatters")
+
+local ns = vim.api.nvim_create_namespace("buffers.nvim")
 
 local state = {
 	buf = -1,
@@ -31,6 +37,8 @@ local function with_defaults(opts)
 				and vim.api.nvim_buf_get_name(bufnr) ~= ""
 		end,
 		close_keys = opts.close_keys or { "<Esc>" },
+		separator = opts.separator or " | ",
+		formatter = opts.formatter or "relative_path",
 	}
 end
 
@@ -97,17 +105,34 @@ local function get_buffer_table(buffers, chars, backup_chars)
 	return out
 end
 
-local function register_buffers(buffer_table, base_buf)
+local function register_buffers(buffer_table, base_buf, separator, formatter)
+	local format = formatters[formatter]
+	if not format then
+		notify(("Formatter '%s' is not available"):format(formatter))
+		return
+	end
 	vim.bo[base_buf].modifiable = true
 	vim.bo[base_buf].readonly = false
 	local lines = {}
+	local ranges = {}
 	for char, bufnr in buffer_table:ordered_pairs() do
-		local name = vim.api.nvim_buf_get_name(bufnr)
-		name = vim.fn.fnamemodify(name, ":~:.")
-		table.insert(lines, char .. " | " .. name)
+		local formatted, range = format(vim.api.nvim_buf_get_name(bufnr))
+		local line = char .. separator .. formatted
+		table.insert(lines, line)
+		table.insert(ranges, range)
 	end
+	vim.api.nvim_buf_clear_namespace(base_buf, ns, 0, -1)
 	vim.api.nvim_buf_set_lines(base_buf, 0, -1, false, {})
 	vim.api.nvim_buf_set_lines(base_buf, 0, #lines, false, lines)
+	for i, range in ipairs(ranges) do
+		vim.api.nvim_buf_set_extmark(
+			base_buf,
+			ns,
+			i - 1,
+			range[1] + 1 + #separator,
+			{ end_col = range[2] + 1 + #separator, hl_group = "Comment" }
+		)
+	end
 end
 
 local function get_win_config(opts, buffer_count)
@@ -166,7 +191,7 @@ function M.toggle(opts)
 		return
 	end
 
-	register_buffers(buffer_table, base_buf)
+	register_buffers(buffer_table, base_buf, opts.separator, opts.formatter)
 
 	vim.bo[base_buf].modifiable = false
 	vim.bo[base_buf].readonly = true
@@ -193,7 +218,7 @@ function M.toggle(opts)
 			end
 		end
 		vim.api.nvim_win_hide(win)
-		notify("No buffer bound to '" .. char .. "'", vim.log.levels.WARN)
+		notify(("No buffer bound to '%s'"):format(char), vim.log.levels.WARN)
 	end)
 end
 
