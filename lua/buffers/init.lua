@@ -3,6 +3,7 @@
 ---@field min_height? integer minimum window height
 ---@field position? 'center'|'bottom_right'|'top_right' window position
 ---@field border? 'none'|'single'|'double'|'rounded'|'solid'|'shadow'|string[] window border
+---@field win_opts? table additional window local options
 ---@field chars? string first available character from buffer name, found in this list, will be used as keymap
 ---@field backup_chars? string if every character from buffer name is unavailable, then this list gets checked
 ---@field filter? fun(bufnr: integer): boolean checks if bufnr should be included in buffers table
@@ -30,6 +31,7 @@ local function with_defaults(opts)
 		min_height = opts.min_height or 6,
 		position = opts.position or "bottom_right",
 		border = opts.border or "single",
+		win_opts = opts.win_opts or {},
 		chars = opts.chars or "qwertyuiopasdfghjklzxcvbnm1234567890",
 		backup_chars = opts.backup_chars or "QWERTYUIOPASDFGHJKLZXCVBNM_-",
 		filter = opts.filter or function(bufnr)
@@ -185,6 +187,9 @@ function M.toggle(opts)
 	local win = state.win
 	if not vim.api.nvim_win_is_valid(win) then
 		win = vim.api.nvim_open_win(base_buf, true, win_config)
+		for key, val in pairs(opts.win_opts) do
+			vim.api.nvim_set_option_value(key, val, { scope = "local", win = win })
+		end
 		state.win = win
 	else
 		vim.api.nvim_win_hide(win)

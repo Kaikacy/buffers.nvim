@@ -31,7 +31,8 @@ so it can be tweaked, without reloading.
 	min_heigh = 6, -- minimum window height
 	position = 'bottom_right', -- window position (can be 'bottom_right', 'top_right' or 'center')
 	border = 'single', -- window border (accepts same values as vim.api.keyset.win_config.border)
-	separator = ' | ' -- separator between char and buffer name
+	win_opts = {}, -- additional window local options
+	separator = ' | ', -- separator between char and buffer name
 	-- characters that can be bound to buffers
 	chars = "qwertyuiopasdfghjklzxcvbnm1234567890",
 	-- if non of the characters from `chars` is available use this list (see #internals for more info)
@@ -43,10 +44,10 @@ so it can be tweaked, without reloading.
 	end,
 	-- how to format buffer names ('relative_path', 'filename_first' or custom function)
 	-- for function usage see #formatters
-	formatter = 'relative_path' 
+	formatter = 'relative_path',
 	-- which keys are used to close the buffers window, without warning
 	-- note: <C-c> always closes the window
-	close_keys = {"<Esc>"}
+	close_keys = {"<Esc>"},
 }
 ```
 
