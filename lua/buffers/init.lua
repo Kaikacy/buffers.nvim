@@ -208,9 +208,8 @@ function M.toggle(opts)
 			vim.api.nvim_win_hide(win)
 			return
 		end
-		char = vim.fn.keytrans(char)
 		for _, key in ipairs(opts.close_keys) do
-			if char:lower() == key:lower() then
+			if char == vim.keycode(key) then
 				vim.api.nvim_win_hide(win)
 				return
 			end

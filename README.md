@@ -80,7 +80,8 @@ Usage of this function is more interesting:
 
 Accidental overlap of keys is pretty much impossible.
 
-For actually mapping character to its buffers, `getcharstr` function, wrapped in `keytrans` is used.
+## Mapping chars
+For actually mapping character to buffers, `getcharstr` function is used.
 Before commit `a541273`, I was using keymaps which where problematic!
 [thanks to this comment](https://www.reddit.com/r/neovim/comments/1lhuqgp/comment/mzaa6u5/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)
 
