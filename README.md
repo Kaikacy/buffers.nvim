@@ -4,7 +4,7 @@ Whole plugin is just a single window and command.
 This plugin is to meet my personal requirements, which doesn't include colors or icons, although I might still add more features.
 
 # Screenshot
-![w_14:21:18_Jun-04](https://github.com/user-attachments/assets/5eb9b122-21aa-4624-93fc-3ace0b58091c)
+![screenshot](https://github.com/user-attachments/assets/490ddd96-fb05-43bf-aa98-8fd66e819941)
 
 # Installation
 Just use any package manager to install.
