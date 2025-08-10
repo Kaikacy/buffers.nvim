@@ -30,7 +30,7 @@ local function with_defaults(opts)
 		width = opts.width or 70,
 		min_height = opts.min_height or 6,
 		position = opts.position or "bottom_right",
-		border = opts.border or "single",
+		border = opts.border or vim.o.winborder,
 		win_opts = opts.win_opts or {},
 		chars = opts.chars or "qwertyuiopasdfghjklzxcvbnm1234567890",
 		backup_chars = opts.backup_chars or "QWERTYUIOPASDFGHJKLZXCVBNM_-",

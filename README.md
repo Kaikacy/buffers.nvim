@@ -30,7 +30,7 @@ so it can be tweaked, without reloading.
 	width = 70, -- window width (longer lines are not yet handled)
 	min_heigh = 6, -- minimum window height
 	position = 'bottom_right', -- window position (can be 'bottom_right', 'top_right' or 'center')
-	border = 'single', -- window border (accepts same values as vim.api.keyset.win_config.border)
+	border = vim.o.winborder, -- window border (accepts same values as vim.api.keyset.win_config.border)
 	win_opts = {}, -- additional window local options
 	separator = ' | ', -- separator between char and buffer name
 	-- characters that can be bound to buffers
