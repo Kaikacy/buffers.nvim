@@ -10,6 +10,7 @@
 ---@field close_keys? string[] which keys will hide buffers window, without warning, when pressed
 ---@field separator? string separator between char and buffer name
 ---@field formatter? 'relative_path'|'filename_first'|formatter how to format buffer name
+---@field icon? boolean whether to show icon or not
 
 local M = {}
 
@@ -41,6 +42,7 @@ local function with_defaults(opts)
 		close_keys = opts.close_keys or { "<Esc>" },
 		separator = opts.separator or " | ",
 		formatter = opts.formatter or "relative_path",
+		icon = opts.icon or false,
 	}
 end
 
