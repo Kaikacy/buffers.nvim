@@ -35,8 +35,7 @@ local function with_defaults(opts)
 		chars = opts.chars or "qwertyuiopasdfghjklzxcvbnm1234567890",
 		backup_chars = opts.backup_chars or "QWERTYUIOPASDFGHJKLZXCVBNM_-",
 		filter = opts.filter or function(bufnr)
-			return vim.api.nvim_get_option_value("buflisted", { buf = bufnr })
-				and vim.api.nvim_buf_get_name(bufnr) ~= ""
+			return vim.fn.buflisted(bufnr) == 1
 		end,
 		close_keys = opts.close_keys or { "<Esc>" },
 		separator = opts.separator or " | ",

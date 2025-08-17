@@ -13,7 +13,7 @@ Just use any package manager to install.
 # Usage
 Single command, `:BuffersToggle`, toggles buffer window.
 Every buffer is filtered using customizable predicate,
-by default that is: `buflisted` option is true and buffer has non-empty name.
+by default that is: buffer exists and has `buflisted` option set (*see [defaults](#defaults)*)
 In that window, only survived buffers are displayed.
 
 From this window, any buffer can be opened using provided key next to it and buffers window is closed.
@@ -39,8 +39,7 @@ so it can be tweaked, without reloading.
 	backup_chars = "QWERTYUIOPASDFGHJKLZXCVBNM_-",
 	-- called for every buffer, to determine if it should be listed in buffers window
 	filter = function(bufnr)
-		return vim.api.nvim_get_option_value("buflisted", { buf = bufnr })
-			and vim.api.nvim_buf_get_name(bufnr) ~= ""
+		return vim.fn.buflised(bufnr)
 	end,
 	-- how to format buffer names ('relative_path', 'filename_first' or custom function)
 	-- for function usage see #formatters
