@@ -1,14 +1,15 @@
 # About
 Simple and efficient buffer switcher, using minimum of 2 keystrokes to get anywhere.
 Whole plugin is just a single window and command.
-This plugin is to meet my personal requirements, which doesn't include colors or icons, although I might still add more features.
+This plugin is to meet my personal requirements, ~~which doesn't include colors or icons~~, although I might still add more features.
 
 # Screenshot
 ![screenshot](https://github.com/user-attachments/assets/490ddd96-fb05-43bf-aa98-8fd66e819941)
 
 # Installation
 Just use any package manager to install.
-`setup()` function is **not** provided, instead see [configuration](#configuration)
+`setup()` function is **not** provided, instead see [configuration](#configuration).
+`icon` option depends on [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons), which must be loaded beforehand.
 
 # Usage
 Single command, `:BuffersToggle`, toggles buffer window.
@@ -33,6 +34,7 @@ so it can be tweaked, without reloading.
 	border = vim.o.winborder, -- window border (accepts same values as vim.api.keyset.win_config.border)
 	win_opts = {}, -- additional window local options
 	separator = ' | ', -- separator between char and buffer name
+	icon = false, -- whether to show icons or not (requires nvim-tree/nvim-web-devicons)
 	-- characters that can be bound to buffers
 	chars = "qwertyuiopasdfghjklzxcvbnm1234567890",
 	-- if non of the characters from `chars` is available use this list (see #internals for more info)
@@ -97,7 +99,7 @@ Range is end-exclusive.
 
 # TODO
 - [x] add custom formatting option
-- [ ] add icons
+- [x] add icons
 - [ ] add more highlights
 - [ ] add docs
 
