@@ -81,23 +81,30 @@ end
 
 local function get_buffer_table(buffers, chars, backup_chars)
 	local out = require("buffers.ordered-table")()
+
 	for i, bufnr in ipairs(buffers) do
 		local fullname = vim.api.nvim_buf_get_name(bufnr)
 		local name = vim.fn.fnamemodify(fullname, ":t")
 		if name == "" then
 			name = fullname
 		end
+
 		local char = get_buffer_char(name, out, chars)
-		if not char then
-			char = get_buffer_char(name, out, backup_chars)
-			if not char then
-				char = get_char_dumb(out, chars .. backup_chars)
-				if not char then
-					-- super rare to get here
-					notify("No available character left from chars and backup_chars", vim.log.levels.ERROR)
-				end
-			end
+		if char then
+			goto continue
 		end
+		char = get_buffer_char(name, out, backup_chars)
+		if char then
+			goto continue
+		end
+		char = get_char_dumb(out, chars .. backup_chars)
+		if not char then
+			-- super rare to get here
+			notify("No available character left from chars and backup_chars", vim.log.levels.ERROR)
+		end
+
+		::continue::
+
 		if char then
 			out:insert(char, bufnr)
 			if vim.api.nvim_get_current_buf() == bufnr then
@@ -114,19 +121,25 @@ local function register_buffers(buffer_table, base_buf, separator, formatter)
 		notify(("Formatter '%s' is not available"):format(formatter))
 		return
 	end
+
 	vim.bo[base_buf].modifiable = true
 	vim.bo[base_buf].readonly = false
+
 	local lines = {}
 	local ranges = {}
+
 	for char, bufnr in buffer_table:ordered_pairs() do
 		local formatted, range = format(vim.api.nvim_buf_get_name(bufnr))
 		local line = char .. separator .. formatted
+
 		table.insert(lines, line)
 		table.insert(ranges, range or { 0, 0 })
 	end
+
 	vim.api.nvim_buf_clear_namespace(base_buf, ns, 0, -1)
 	vim.api.nvim_buf_set_lines(base_buf, 0, -1, false, {})
 	vim.api.nvim_buf_set_lines(base_buf, 0, #lines, false, lines)
+
 	for i, range in ipairs(ranges) do
 		vim.api.nvim_buf_set_extmark(
 			base_buf,
@@ -143,6 +156,7 @@ local function get_win_config(opts, buffer_count)
 
 	local col = vim.o.columns
 	local row = vim.o.lines
+
 	if opts.position == "top_right" then
 		row = 0
 	elseif opts.position == "center" then
@@ -185,6 +199,7 @@ function M.toggle(opts)
 		vim.bo[base_buf].filetype = "buffers"
 		state.buf = base_buf
 	end
+
 	local win = state.win
 	if not vim.api.nvim_win_is_valid(win) then
 		win = vim.api.nvim_open_win(base_buf, true, win_config)
@@ -209,12 +224,14 @@ function M.toggle(opts)
 			vim.api.nvim_win_hide(win)
 			return
 		end
+
 		for _, key in ipairs(opts.close_keys) do
 			if char == vim.keycode(key) then
 				vim.api.nvim_win_hide(win)
 				return
 			end
 		end
+
 		for c, buf in buffer_table:ordered_pairs() do
 			if char == c then
 				vim.api.nvim_win_hide(win)
@@ -222,6 +239,7 @@ function M.toggle(opts)
 				return
 			end
 		end
+
 		vim.api.nvim_win_hide(win)
 		notify(("No buffer bound to '%s'"):format(char), vim.log.levels.WARN)
 	end)
