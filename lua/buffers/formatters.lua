@@ -9,6 +9,7 @@ local devicons_loaded, devicons = pcall(require, "nvim-web-devicons")
 function M.relative_path(full_path)
 	local rel_path = vim.fn.fnamemodify(full_path, ":~:.")
 	local dir_name = vim.fn.fnamemodify(rel_path, ":h")
+	local dir_offset = 0
 	if devicons_loaded and vim.g.buffers_config.icon then
 		local icon, _ = devicons.get_icon(
 			vim.fn.fnamemodify(full_path, ":t"),
@@ -17,12 +18,13 @@ function M.relative_path(full_path)
 		)
 		if icon then
 			rel_path = icon .. " " .. rel_path
+			dir_offset = #icon + 1
 		end
 	end
 	if dir_name == "." then
 		return rel_path
 	end
-	return rel_path, { 0, #dir_name + 1 }
+	return rel_path, { dir_offset, #dir_name + dir_offset + 1 }
 end
 
 ---range is end-exclusive path name without the tail
