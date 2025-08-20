@@ -69,7 +69,7 @@ end
 local function get_buffer_char(name, buffer_table, chars)
 	local char = name:sub(1, 1)
 	local i = 2
-	while buffer_table:get(char) or string.find(chars, char, 1, true) == nil do
+	while buffer_table:get(char) or chars:find(char, 1, true) == nil do
 		if i > #name then
 			return nil
 		end
@@ -85,11 +85,13 @@ local function get_buffer_table(buffers, chars, backup_chars)
 	for i, bufnr in ipairs(buffers) do
 		local fullname = vim.api.nvim_buf_get_name(bufnr)
 		local name = vim.fn.fnamemodify(fullname, ":t")
+
+		local char = nil
 		if name == "" then
-			name = fullname
+			goto char_dumb
 		end
 
-		local char = get_buffer_char(name, out, chars)
+		char = get_buffer_char(name, out, chars)
 		if char then
 			goto continue
 		end
@@ -97,7 +99,9 @@ local function get_buffer_table(buffers, chars, backup_chars)
 		if char then
 			goto continue
 		end
+		::char_dumb::
 		char = get_char_dumb(out, chars .. backup_chars)
+
 		if not char then
 			-- super rare to get here
 			notify("No available character left from chars and backup_chars", vim.log.levels.ERROR)
