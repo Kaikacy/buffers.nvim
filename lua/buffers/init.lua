@@ -185,6 +185,8 @@ end
 ---toggle buffers window with options
 ---@param opts buffers.Config
 function M.toggle(opts)
+	-- TODO: rewrite
+	vim.g.buffers_config = vim.g.buffers_config or {}
 	---@diagnostic disable-next-line: redefined-local
 	local opts = with_defaults(opts or {})
 	local buffers = filter_buffers(opts.filter)
