@@ -1,16 +1,18 @@
+---@alias buffers.size number|[number, number]
+---@alias buffers.pos 'center'|'center_right'|'bottom_right'|'top_right'
+
 ---@class buffers.Config
----@field width? integer window width
----@field min_height? integer minimum window height
----@field position? 'center'|'bottom_right'|'top_right' window position
----@field border? 'none'|'single'|'double'|'rounded'|'solid'|'shadow'|string[] window border
----@field win_opts? table additional window local options
----@field chars? string first available character from buffer name, found in this list, will be used as keymap
----@field backup_chars? string if every character from buffer name is unavailable, then this list gets checked
----@field filter? fun(bufnr: integer): boolean checks if bufnr should be included in buffers table
----@field close_keys? string[] which keys will hide buffers window, without warning, when pressed
----@field separator? string separator between char and buffer name
----@field formatter? 'relative_path'|'filename_first'|formatter how to format buffer name
----@field icon? boolean whether to show icon or not
+---@field width? buffers.size Window width or min, max bounds
+---@field height? buffers.size Window height or min, max bounds
+---@field pos? buffers.pos Window position
+---@field border? 'none'|'single'|'double'|'rounded'|'solid'|'shadow'|string[] Window border
+---@field win_opts? table Additional window local options
+---@field chars? string Characters to use for mappings
+---@field filter? fun(buf: integer): boolean Checks if buf should be included in buffers table
+---@field close_keys? string[] Which keys will hide buffers window, without warning, when pressed
+---@field separator? string Separator between char and buffer name
+---@field formatter? 'relative_path'|'filename_first'|buffers.formatter How to format buffer name
+---@field icons? boolean Whether to show icons or not
 
 local M = {}
 
@@ -29,19 +31,18 @@ local state = {
 local function with_defaults(opts)
 	return {
 		width = opts.width or 70,
-		min_height = opts.min_height or 6,
-		position = opts.position or "bottom_right",
+		height = opts.height or 6,
+		position = opts.pos or "bottom_right",
 		border = opts.border or vim.o.winborder,
 		win_opts = opts.win_opts or {},
 		chars = opts.chars or "qwertyuiopasdfghjklzxcvbnm1234567890",
-		backup_chars = opts.backup_chars or "QWERTYUIOPASDFGHJKLZXCVBNM_-",
 		filter = opts.filter or function(bufnr)
 			return vim.fn.buflisted(bufnr) == 1
 		end,
 		close_keys = opts.close_keys or { "<Esc>" },
 		separator = opts.separator or " | ",
 		formatter = opts.formatter or "relative_path",
-		icon = opts.icon or false,
+		icons = opts.icons or false,
 	}
 end
 
@@ -185,12 +186,12 @@ end
 ---toggle buffers window with options
 ---@param opts buffers.Config
 function M.toggle(opts)
-	-- TODO: rewrite
 	vim.g.buffers_config = vim.g.buffers_config or {}
 	---@diagnostic disable-next-line: redefined-local
 	local opts = with_defaults(opts or {})
 	local buffers = filter_buffers(opts.filter)
-	local buffer_table = get_buffer_table(buffers, opts.chars, opts.backup_chars)
+	-- TODO: remove backup_chars thing
+	local buffer_table = get_buffer_table(buffers, opts.chars, opts.chars)
 
 	local win_config = get_win_config(opts, #buffers)
 	if win_config == nil then
