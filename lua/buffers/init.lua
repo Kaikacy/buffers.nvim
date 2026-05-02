@@ -1,5 +1,5 @@
 ---@alias buffers.size number|[number, number]
----@alias buffers.pos 'center'|'center_right'|'bottom_right'|'top_right'
+---@alias buffers.pos 'center_right'|'bottom_right'|'top_right'
 
 ---@class buffers.Config
 ---@field width? buffers.size Window width or min, max bounds
@@ -18,28 +18,28 @@ local M = {}
 
 local formatters = require("buffers.formatters")
 
-local ns = vim.api.nvim_create_namespace("buffers.nvim")
-
 local state = {
 	buf = -1,
 	win = -1,
 	cur_buf_line = nil,
+	ns = vim.api.nvim_create_namespace("buffers-highlight"),
+	buf_table = require("buffers.buf-table").new(),
 }
 
 ---@param opts buffers.Config
 ---@return buffers.Config
 local function with_defaults(opts)
 	return {
-		width = opts.width or 70,
-		height = opts.height or 6,
-		position = opts.pos or "bottom_right",
-		border = opts.border or vim.o.winborder,
+		width = opts.width or { 0, 0.5 },
+		height = opts.height or { 0, 0.5 },
+		pos = opts.pos or "center_right",
+		border = opts.border or "single",
 		win_opts = opts.win_opts or {},
 		chars = opts.chars or "qwertyuiopasdfghjklzxcvbnm1234567890",
-		filter = opts.filter or function(bufnr)
-			return vim.fn.buflisted(bufnr) == 1
+		filter = opts.filter or function(buf)
+			return vim.fn.buflisted(buf) == 1
 		end,
-		close_keys = opts.close_keys or { "<Esc>" },
+		close_keys = opts.close_keys or { "<ESC>" },
 		separator = opts.separator or " | ",
 		formatter = opts.formatter or "relative_path",
 		icons = opts.icons or false,
@@ -49,13 +49,7 @@ end
 ---@param msg string
 ---@param level integer|nil
 local function notify(msg, level)
-	vim.notify(msg, level, { title = "Buffers.nvim" })
-end
-
-local function filter_buffers(filter_func)
-	return vim.tbl_filter(function(bufnr)
-		return filter_func(bufnr)
-	end, vim.api.nvim_list_bufs())
+	vim.notify(msg, level, { title = "buffers.nvim" })
 end
 
 local function get_char_dumb(buffer_table, chars)
@@ -80,44 +74,15 @@ local function get_buffer_char(name, buffer_table, chars)
 	return char
 end
 
-local function get_buffer_table(buffers, chars, backup_chars)
-	local out = require("buffers.ordered-table")()
+local function update_buf_table(bufs, chars)
+	for i, buf in ipairs(bufs) do
+		if not state.buf_table:get(buf) then
+			-- New buffer (not yet in the buf_table and key not yet assigned)
 
-	for i, bufnr in ipairs(buffers) do
-		local fullname = vim.api.nvim_buf_get_name(bufnr)
-		local name = vim.fn.fnamemodify(fullname, ":t")
-
-		local char = nil
-		if name == "" then
-			goto char_dumb
-		end
-
-		char = get_buffer_char(name, out, chars)
-		if char then
-			goto continue
-		end
-		char = get_buffer_char(name, out, backup_chars)
-		if char then
-			goto continue
-		end
-		::char_dumb::
-		char = get_char_dumb(out, chars .. backup_chars)
-
-		if not char then
-			-- super rare to get here
-			notify("No available character left from chars and backup_chars", vim.log.levels.ERROR)
-		end
-
-		::continue::
-
-		if char then
-			out:insert(char, bufnr)
-			if vim.api.nvim_get_current_buf() == bufnr then
-				state.cur_buf_line = i
-			end
+			local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":t")
+			-- TODO: get available key, assign it and save entry in buf_table
 		end
 	end
-	return out
 end
 
 local function register_buffers(buffer_table, base_buf, separator, formatter)
@@ -141,14 +106,14 @@ local function register_buffers(buffer_table, base_buf, separator, formatter)
 		table.insert(ranges, range or { 0, 0 })
 	end
 
-	vim.api.nvim_buf_clear_namespace(base_buf, ns, 0, -1)
+	vim.api.nvim_buf_clear_namespace(base_buf, state.ns, 0, -1)
 	vim.api.nvim_buf_set_lines(base_buf, 0, -1, false, {})
 	vim.api.nvim_buf_set_lines(base_buf, 0, #lines, false, lines)
 
 	for i, range in ipairs(ranges) do
 		vim.api.nvim_buf_set_extmark(
 			base_buf,
-			ns,
+			state.ns,
 			i - 1,
 			range[1] + 1 + #separator,
 			{ end_col = range[2] + 1 + #separator, hl_group = "Comment" }
@@ -183,17 +148,14 @@ local function get_win_config(opts, buffer_count)
 	}
 end
 
----toggle buffers window with options
----@param opts buffers.Config
-function M.toggle(opts)
+---Toggle buffers window
+function M.toggle()
 	vim.g.buffers_config = vim.g.buffers_config or {}
-	---@diagnostic disable-next-line: redefined-local
-	local opts = with_defaults(opts or {})
-	local buffers = filter_buffers(opts.filter)
-	-- TODO: remove backup_chars thing
-	local buffer_table = get_buffer_table(buffers, opts.chars, opts.chars)
+	local opts = with_defaults(vim.g.buffers_config)
+	local bufs = vim.tbl_filter(opts.filter, vim.api.nvim_list_bufs())
+	update_buf_table(bufs, opts.chars)
 
-	local win_config = get_win_config(opts, #buffers)
+	local win_config = get_win_config(opts, #bufs)
 	if win_config == nil then
 		return
 	end
