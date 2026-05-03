@@ -1,6 +1,7 @@
 ---@class buffers.BufTable
----@field data table
----@field keys string[] Keycodes; Vim representation
+---@field key2buf table<string, number> Key to buf; Key is keycode
+---@field buf2key table<number, string> Buf to key
+---@field order string[] Key order
 local BufTable = {}
 BufTable.__index = BufTable
 
@@ -8,47 +9,57 @@ BufTable.__index = BufTable
 ---Used to preserve buf to key mappings for consistency and also saves key to buf
 ---@return buffers.BufTable
 function BufTable.new()
+	---@type buffers.BufTable
 	return setmetatable({
-		data = {}, -- key -> buf and buf -> key
-		keys = {}, -- Saves key order
+		key2buf = {},
+		buf2key = {},
+		order = {},
 	}, BufTable)
 end
 
 ---Create a new entry
 function BufTable:set(key, buf)
-	if self.keys[key] == nil then
-		table.insert(self.keys, key)
+	if self.key2buf[key] == nil then
+		table.insert(self.order, key)
 	end
-	self.data[key] = buf
-	self.data[buf] = key
-end
-
----If key was provided, get buf, otherwise get key
-function BufTable:get(key_or_buf)
-	return self.data[key_or_buf]
+	self.key2buf[key] = buf
+	self.buf2key[buf] = key
 end
 
 ---Remove an entry with specified key
-function BufTable:remove(key)
-	local buf = self.data[key]
-	self.data[key] = nil
-	self.data[buf] = nil
-	for i, k in ipairs(self.keys) do
+function BufTable:remove_key(key)
+	for i, k in ipairs(self.order) do
 		if k == key then
-			table.remove(self.keys, i)
+			local buf = self.key2buf[key]
+			self.key2buf[key] = nil
+			self.buf2key[buf] = nil
+			table.remove(self.order, i)
 			return
 		end
 	end
 end
 
----Key, buf pairs iterator in order
+---Remove an entry with specified buf
+function BufTable:remove_buf(buf)
+	local key = self.buf2key[buf]
+	for i, k in ipairs(self.order) do
+		if k == key then
+			self.key2buf[key] = nil
+			self.buf2key[buf] = nil
+			table.remove(self.order, i)
+			return
+		end
+	end
+end
+
+---Ordered key and buf pairs iterator
 function BufTable:ordered_iter()
 	local i = 0
 	return function()
 		i = i + 1
-		local key = self.keys[i]
+		local key = self.order[i]
 		if key then
-			return key, self.data[key]
+			return key, self.key2buf[key]
 		end
 	end
 end
