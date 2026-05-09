@@ -61,10 +61,11 @@ local function update_buf_table(bufs)
 		if not key then
 			notify(("No key available for %d buffer: '%s'"):format(buf, name), vim.log.levels.ERROR)
 			notify("Try expanding `chars` list", vim.log.levels.INFO)
-			return
+			return true
 		end
 		new_table:set(key, buf)
 	end
+	state.buf_table = new_table
 end
 
 local function register_buffers()
@@ -72,7 +73,7 @@ local function register_buffers()
 		or state.opts.formatter
 	if not format then
 		notify(("Formatter '%s' is not available"):format(state.opts.formatter), vim.log.levels.ERROR)
-		return
+		return true
 	end
 
 	vim.bo[state.buf].modifiable = true
@@ -139,8 +140,13 @@ end
 function M.toggle()
 	set_defaults(vim.g.buffers_config or {})
 	local bufs = vim.tbl_filter(state.opts.filter, vim.api.nvim_list_bufs())
-	update_buf_table(bufs)
+	if update_buf_table(bufs) then -- Error
+		return
+	end
 
+	if register_buffers() then -- Error
+		return
+	end
 	local win_config = get_win_config(opts, #bufs)
 	if win_config == nil then
 		return
