@@ -76,9 +76,6 @@ local function register_buffers()
 		return true
 	end
 
-	vim.bo[state.buf].modifiable = true
-	vim.bo[state.buf].readonly = false
-
 	local lines = {}
 	local ranges_table = {}
 
@@ -109,29 +106,56 @@ local function register_buffers()
 	end
 end
 
-local function get_win_config(opts, buffer_count)
-	local height = math.max(opts.min_height, buffer_count)
+local function clamp(n, min, max)
+	return math.min(math.max(min, n), max)
+end
 
-	local col = vim.o.columns
-	local row = vim.o.lines
+local function resolve_width(width)
+	if width > 0 and width <= 1 then
+		return vim.fn.round(vim.o.columns * width)
+	else
+		return width
+	end
+end
 
-	if opts.position == "top_right" then
-		row = 0
-	elseif opts.position == "center" then
-		col = (vim.o.columns - opts.width) * 0.5
-		row = (vim.o.lines - height) * 0.5
-	elseif opts.position ~= "bottom_right" then
-		notify("Position must be `top_right`, `center` or `bottom_right`", vim.log.levels.ERROR)
-		return nil
+local function resolve_height(height)
+	if height > 0 and height <= 1 then
+		return vim.fn.round(vim.o.lines * height)
+	else
+		return height
+	end
+end
+
+local function get_win_config()
+	local width = state.opts.width
+	if type(width) == "table" then
+		width = clamp(state.exact_width, resolve_width(width[1]), resolve_width(width[2]))
+	end
+	local height = state.opts.height
+	if type(height) == "table" then
+		height = clamp(state.exact_height, resolve_height(height[1]), resolve_height(height[2]))
+	end
+
+	local row, col = 0, 0
+	local yanchor = "N"
+	-- Nothing to do for 'top_right'
+	if state.opts.pos == "center_right" then
+		row = bit.rshift(vim.o.lines - height, 1)
+	elseif state.opts.position == "bottom_right" then
+		yanchor = "S"
+	else
+		notify("Invalid value for `pos` option", vim.log.levels.ERROR)
+		return
 	end
 
 	return {
 		relative = "editor",
-		width = opts.width,
+		width = width,
 		height = height,
 		col = col,
 		row = row,
-		border = opts.border,
+		anchor = "E" .. yanchor, -- X anchor is always east (right)
+		border = state.opts.border,
 		style = "minimal",
 	}
 end
@@ -144,64 +168,55 @@ function M.toggle()
 		return
 	end
 
+	if not vim.api.nvim_buf_is_valid(state.buf) then
+		state.buf = vim.api.nvim_create_buf(false, true)
+		vim.api.nvim_buf_set_name(state.buf, "buffers")
+		vim.bo[state.buf].buftype = "nofile"
+		vim.bo[state.buf].filetype = "buffers"
+	end
+
 	if register_buffers() then -- Error
 		return
 	end
-	local win_config = get_win_config(opts, #bufs)
+
+	local win_config = get_win_config()
 	if win_config == nil then
 		return
 	end
 
-	local buf = state.buf
-	if not vim.api.nvim_buf_is_valid(buf) then
-		buf = vim.api.nvim_create_buf(false, true)
-		vim.api.nvim_buf_set_name(buf, "buffers")
-		vim.bo[buf].buftype = "nofile"
-		vim.bo[buf].filetype = "buffers"
-		state.buf = buf
-	end
-
-	register_buffers(buffer_table, buf, opts.separator, opts.formatter)
-
-	local win = state.win
-	if not vim.api.nvim_win_is_valid(win) then
-		win = vim.api.nvim_open_win(buf, true, win_config)
-		for key, val in pairs(opts.win_opts) do
-			vim.api.nvim_set_option_value(key, val, { scope = "local", win = win })
+	if not vim.api.nvim_win_is_valid(state.win) then
+		state.win = vim.api.nvim_open_win(state.buf, false, win_config)
+		for key, val in pairs(state.opts.win_opts) do
+			vim.wo[state.win][key] = val
 		end
-		state.win = win
 	else
-		vim.api.nvim_win_hide(win)
+		vim.api.nvim_win_hide(state.win)
 		return
 	end
-
-	vim.bo[buf].modifiable = false
-	vim.bo[buf].readonly = true
-	vim.api.nvim_win_set_cursor(win, { state.cur_buf_line or 1, 0 })
 
 	vim.schedule(function()
 		local ok, char = pcall(vim.fn.getcharstr)
 		if not ok then
-			vim.api.nvim_win_hide(win)
+			vim.api.nvim_win_hide(state.win)
 			return
 		end
 
-		for _, key in ipairs(opts.close_keys) do
+		for _, key in ipairs(state.opts.close_keys) do
 			if char == vim.keycode(key) then
-				vim.api.nvim_win_hide(win)
+				vim.api.nvim_win_hide(state.win)
 				return
 			end
 		end
 
-		for c, buf in buffer_table:ordered_pairs() do
-			if char == c then
-				vim.api.nvim_win_hide(win)
+		for _, key, buf in state.buf_table:ordered_iter() do
+			if char == key then -- Key should be single character
+				vim.api.nvim_win_hide(state.win)
 				vim.api.nvim_set_current_buf(buf)
 				return
 			end
 		end
 
-		vim.api.nvim_win_hide(win)
+		vim.api.nvim_win_hide(state.win)
 		notify(("No buffer bound to '%s'"):format(char), vim.log.levels.WARN)
 	end)
 end
