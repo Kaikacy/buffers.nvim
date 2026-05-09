@@ -1,5 +1,3 @@
-local state = require("buffers.state")
-
 ---@class buffers.BufTable
 ---@field key2buf table<string, number> Key to buf; Key is keycode
 ---@field buf2key table<number, string> Buf to key
@@ -57,17 +55,17 @@ end
 ---Create key from name
 ---@param name string
 ---@return string?
-function BufTable:create_buf_key(name)
+function BufTable:create_buf_key(name, chars)
 	local actual_name = name
 	local check_name = actual_name:lower()
 	local i = 1
 	local key = check_name:sub(i, i)
-	while self.key2buf[key] or string.find(state.opts.chars, key, 1, true) == nil do
+	while self.key2buf[key] or string.find(chars, key, 1, true) == nil do
 		if i > #check_name then
 			if check_name == actual_name then
 				-- Dumb method
-				for j = 1, #state.opts.chars do
-					key = string.sub(state.opts.chars, j, j)
+				for j = 1, #chars do
+					key = string.sub(chars, j, j)
 					if not self.key2buf[key] then
 						return key
 					end

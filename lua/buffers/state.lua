@@ -5,7 +5,7 @@ local state = {
 	exact_height = -1,
 	ns = vim.api.nvim_create_namespace("buffers-highlight"),
 	buf_table = require("buffers.buf-table").new(),
-	opts = nil,
+	opts = {},
 }
 
 return state

@@ -57,7 +57,7 @@ local function update_buf_table(bufs)
 	end
 	for _, buf in ipairs(new_bufs) do
 		local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":t")
-		local key = new_table:create_buf_key(name)
+		local key = new_table:create_buf_key(name, state.opts.chars)
 		if not key then
 			notify(("No key available for %d buffer: '%s'"):format(buf, name), vim.log.levels.ERROR)
 			notify("Try expanding `chars` list", vim.log.levels.INFO)
@@ -136,13 +136,14 @@ local function get_win_config()
 		height = clamp(state.exact_height, resolve_height(height[1]), resolve_height(height[2]))
 	end
 
-	local row, col = 0, 0
+	local row, col = 0, vim.o.columns
 	local yanchor = "N"
 	-- Nothing to do for 'top_right'
 	if state.opts.pos == "center_right" then
 		row = bit.rshift(vim.o.lines - height, 1)
 	elseif state.opts.position == "bottom_right" then
 		yanchor = "S"
+		row = vim.o.lines
 	else
 		notify("Invalid value for `pos` option", vim.log.levels.ERROR)
 		return
@@ -154,14 +155,16 @@ local function get_win_config()
 		height = height,
 		col = col,
 		row = row,
-		anchor = "E" .. yanchor, -- X anchor is always east (right)
+		anchor = yanchor .. "E", -- X anchor is always east (right)
 		border = state.opts.border,
 		style = "minimal",
 	}
 end
 
----Toggle buffers window
-function M.toggle()
+---@param action fun(buf: integer): any
+---@return any
+---Toggle buffers window with custom action
+function M.toggle(action)
 	set_defaults(vim.g.buffers_config or {})
 	local bufs = vim.tbl_filter(state.opts.filter, vim.api.nvim_list_bufs())
 	if update_buf_table(bufs) then -- Error
@@ -211,13 +214,25 @@ function M.toggle()
 		for _, key, buf in state.buf_table:ordered_iter() do
 			if char == key then -- Key should be single character
 				vim.api.nvim_win_hide(state.win)
-				vim.api.nvim_set_current_buf(buf)
-				return
+				return action(buf)
 			end
 		end
 
 		vim.api.nvim_win_hide(state.win)
 		notify(("No buffer bound to '%s'"):format(char), vim.log.levels.WARN)
+	end)
+end
+
+---Switch to selected buffer
+function M.switch()
+	M.toggle(vim.api.nvim_set_current_buf)
+end
+
+---Delete selected buffer with :bdelete
+---@param force boolean
+function M.delete(force)
+	M.toggle(function(buf)
+		vim.cmd.bdelete(buf .. "bdelete" .. force and "!" or "")
 	end)
 end
 
