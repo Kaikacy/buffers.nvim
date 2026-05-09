@@ -76,33 +76,40 @@ local function register_buffers()
 		return true
 	end
 
-	local lines = {}
-	local ranges_table = {}
+	vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, {})
 
 	for i, key, buf in state.buf_table:ordered_iter() do
-		local text, ranges = format(buf)
-		local line = key .. state.opts.separator .. text
-		state.exact_width = math.max(state.exact_width, #line)
-
-		table.insert(lines, line)
-		ranges_table[i] = ranges -- Might be nil and nothing will be assigned
-	end
-	state.exact_height = #lines
-
-	vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, lines)
-
-	-- NOTE: Key is assumed to be single character
-	local text_start = 1 + #state.opts.separator -- key + separator
-	for i, ranges in pairs(ranges_table) do
-		for _, range in ipairs(ranges) do
-			vim.api.nvim_buf_set_extmark(
-				state.buf,
-				state.ns,
-				i - 1,
-				text_start + range[2],
-				{ end_col = text_start + range[3], hl_group = range[1] }
-			)
+		local full_name = vim.api.nvim_buf_get_name(buf)
+		local text, ranges = format(full_name, buf)
+		local icon = ""
+		if state.opts.icons then
+			icon = devicons.get_icon(
+				vim.fn.fnamemodify(full_name, ":t"),
+				vim.fn.fnamemodify(full_name, ":e"),
+				{ default = true }
+			) .. " "
 		end
+		local line = key .. state.opts.separator .. icon .. text
+		state.exact_width = math.max(state.exact_width, vim.fn.strcharlen(line)) -- Display width; Not bytes
+		local text_start = #key + #state.opts.separator + #icon
+
+		-- Multiple calls might be insigificantly slower than collecting lines and calling once, even with extra for-loop to set extmarks
+		-- But this is simpler and cleaner
+		vim.api.nvim_buf_set_lines(state.buf, i - 1, i - 1, false, { line })
+
+		if ranges then
+			for _, range in ipairs(ranges) do
+				-- Expects sizes in bytes
+				vim.api.nvim_buf_set_extmark(
+					state.buf,
+					state.ns_hl,
+					i - 1,
+					text_start + range[2],
+					{ end_col = text_start + range[3], hl_group = range[1] }
+				)
+			end
+		end
+		state.exact_height = i
 	end
 end
 

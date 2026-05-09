@@ -1,11 +1,10 @@
 local M = {}
 
 ---@alias buffers.hl_range [string, integer, integer] hl-group, start and end column (0-based, end-exclusive)
----@alias buffers.formatter fun(buf: integer): string, buffers.hl_range[]?
+---@alias buffers.formatter fun(full_name: string, buf: integer): string, buffers.hl_range[]?
 
 ---@type buffers.formatter
-function M.relative_path(buf)
-	local full_name = vim.api.nvim_buf_get_name(buf)
+function M.relative_path(full_name)
 	local rel_path = vim.fn.fnamemodify(full_name, ":~:.")
 	local dir_name = vim.fn.fnamemodify(rel_path, ":h")
 
@@ -13,7 +12,7 @@ function M.relative_path(buf)
 		return rel_path
 	end
 
-	return rel_path, { { "Comment", 0, #dir_name } }
+	return rel_path, { { "Comment", 0, #dir_name + 1 } }
 end
 
 -- TODO
