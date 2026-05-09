@@ -85,14 +85,14 @@ function BufTable:create_buf_key(name)
 	return key
 end
 
----Ordered key and buf pairs iterator
+---Ordered index (1-based), key and buf iterator
 function BufTable:ordered_iter()
 	local i = 0
 	return function()
 		i = i + 1
 		local key = self.order[i]
 		if key then
-			return key, self.key2buf[key]
+			return i, key, self.key2buf[key]
 		end
 	end
 end

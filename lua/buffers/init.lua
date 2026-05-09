@@ -17,7 +17,7 @@
 local M = {}
 
 local buf_table = require("buffers.buf-table")
-local formatters = require("buffers.formatters")
+local devicons_loaded, devicons = pcall(require, "nvim-web-devicons")
 
 local state = require("buffers.state")
 
@@ -35,7 +35,7 @@ local function set_defaults(opts)
 	state.opts.close_keys = opts.close_keys or { "<ESC>" }
 	state.opts.separator = opts.separator or " | "
 	state.opts.formatter = opts.formatter or "relative_path"
-	state.opts.icons = opts.icons or false
+	state.opts.icons = (opts.icons and devicons_loaded) or false
 end
 
 ---@param msg string
@@ -60,45 +60,51 @@ local function update_buf_table(bufs)
 		local key = new_table:create_buf_key(name)
 		if not key then
 			notify(("No key available for %d buffer: '%s'"):format(buf, name), vim.log.levels.ERROR)
+			notify("Try expanding `chars` list", vim.log.levels.INFO)
 			return
 		end
 		new_table:set(key, buf)
 	end
 end
 
-local function register_buffers(buffer_table, base_buf, separator, formatter)
-	local format = type(formatter) == "string" and formatters[formatter] or formatter
+local function register_buffers()
+	local format = type(state.opts.formatter) == "string" and require("buffers.formatters")[state.opts.formatter]
+		or state.opts.formatter
 	if not format then
-		notify(("Formatter '%s' is not available"):format(formatter))
+		notify(("Formatter '%s' is not available"):format(state.opts.formatter), vim.log.levels.ERROR)
 		return
 	end
 
-	vim.bo[base_buf].modifiable = true
-	vim.bo[base_buf].readonly = false
+	vim.bo[state.buf].modifiable = true
+	vim.bo[state.buf].readonly = false
 
 	local lines = {}
-	local ranges = {}
+	local ranges_table = {}
 
-	for char, bufnr in buffer_table:ordered_pairs() do
-		local formatted, range = format(vim.api.nvim_buf_get_name(bufnr))
-		local line = char .. separator .. formatted
+	for i, key, buf in state.buf_table:ordered_iter() do
+		local text, ranges = format(buf)
+		local line = key .. state.opts.separator .. text
+		state.exact_width = math.max(state.exact_width, #line)
 
 		table.insert(lines, line)
-		table.insert(ranges, range or { 0, 0 })
+		ranges_table[i] = ranges -- Might be nil and nothing will be assigned
 	end
+	state.exact_height = #lines
 
-	vim.api.nvim_buf_clear_namespace(base_buf, state.ns, 0, -1)
-	vim.api.nvim_buf_set_lines(base_buf, 0, -1, false, {})
-	vim.api.nvim_buf_set_lines(base_buf, 0, #lines, false, lines)
+	vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, lines)
 
-	for i, range in ipairs(ranges) do
-		vim.api.nvim_buf_set_extmark(
-			base_buf,
-			state.ns,
-			i - 1,
-			range[1] + 1 + #separator,
-			{ end_col = range[2] + 1 + #separator, hl_group = "Comment" }
-		)
+	-- NOTE: Key is assumed to be single character
+	local text_start = 1 + #state.opts.separator -- key + separator
+	for i, ranges in pairs(ranges_table) do
+		for _, range in ipairs(ranges) do
+			vim.api.nvim_buf_set_extmark(
+				state.buf,
+				state.ns,
+				i - 1,
+				text_start + range[2],
+				{ end_col = text_start + range[3], hl_group = range[1] }
+			)
+		end
 	end
 end
 
@@ -140,18 +146,20 @@ function M.toggle()
 		return
 	end
 
-	local base_buf = state.buf
-	if not vim.api.nvim_buf_is_valid(base_buf) then
-		base_buf = vim.api.nvim_create_buf(false, true)
-		vim.api.nvim_buf_set_name(base_buf, "buffers")
-		vim.bo[base_buf].buftype = "nofile"
-		vim.bo[base_buf].filetype = "buffers"
-		state.buf = base_buf
+	local buf = state.buf
+	if not vim.api.nvim_buf_is_valid(buf) then
+		buf = vim.api.nvim_create_buf(false, true)
+		vim.api.nvim_buf_set_name(buf, "buffers")
+		vim.bo[buf].buftype = "nofile"
+		vim.bo[buf].filetype = "buffers"
+		state.buf = buf
 	end
+
+	register_buffers(buffer_table, buf, opts.separator, opts.formatter)
 
 	local win = state.win
 	if not vim.api.nvim_win_is_valid(win) then
-		win = vim.api.nvim_open_win(base_buf, true, win_config)
+		win = vim.api.nvim_open_win(buf, true, win_config)
 		for key, val in pairs(opts.win_opts) do
 			vim.api.nvim_set_option_value(key, val, { scope = "local", win = win })
 		end
@@ -161,10 +169,8 @@ function M.toggle()
 		return
 	end
 
-	register_buffers(buffer_table, base_buf, opts.separator, opts.formatter)
-
-	vim.bo[base_buf].modifiable = false
-	vim.bo[base_buf].readonly = true
+	vim.bo[buf].modifiable = false
+	vim.bo[buf].readonly = true
 	vim.api.nvim_win_set_cursor(win, { state.cur_buf_line or 1, 0 })
 
 	vim.schedule(function()
