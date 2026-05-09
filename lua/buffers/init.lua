@@ -16,34 +16,26 @@
 
 local M = {}
 
+local buf_table = require("buffers.buf-table")
 local formatters = require("buffers.formatters")
 
-local state = {
-	buf = -1,
-	win = -1,
-	cur_buf_line = nil,
-	ns = vim.api.nvim_create_namespace("buffers-highlight"),
-	buf_table = require("buffers.buf-table").new(),
-}
+local state = require("buffers.state")
 
 ---@param opts buffers.Config
----@return buffers.Config
-local function with_defaults(opts)
-	return {
-		width = opts.width or { 0, 0.5 },
-		height = opts.height or { 0, 0.5 },
-		pos = opts.pos or "center_right",
-		border = opts.border or "single",
-		win_opts = opts.win_opts or {},
-		chars = opts.chars or "qwertyuiopasdfghjklzxcvbnm1234567890",
-		filter = opts.filter or function(buf)
-			return vim.fn.buflisted(buf) == 1
-		end,
-		close_keys = opts.close_keys or { "<ESC>" },
-		separator = opts.separator or " | ",
-		formatter = opts.formatter or "relative_path",
-		icons = opts.icons or false,
-	}
+local function set_defaults(opts)
+	state.opts.width = opts.width or { 0, 0.5 }
+	state.opts.height = opts.height or { 0, 0.5 }
+	state.opts.pos = opts.pos or "center_right"
+	state.opts.border = opts.border or "single"
+	state.opts.win_opts = opts.win_opts or {}
+	state.opts.chars = opts.chars or "qwertyuiopasdfghjklzxcvbnm1234567890"
+	state.opts.filter = opts.filter or function(buf)
+		return vim.fn.buflisted(buf) == 1
+	end
+	state.opts.close_keys = opts.close_keys or { "<ESC>" }
+	state.opts.separator = opts.separator or " | "
+	state.opts.formatter = opts.formatter or "relative_path"
+	state.opts.icons = opts.icons or false
 end
 
 ---@param msg string
@@ -52,36 +44,25 @@ local function notify(msg, level)
 	vim.notify(msg, level, { title = "buffers.nvim" })
 end
 
-local function get_char_dumb(buffer_table, chars)
-	for i = 1, #chars do
-		if not buffer_table:get(chars:sub(i, i)) then
-			return chars:sub(i, i)
+local function update_buf_table(bufs)
+	local new_table = buf_table.new()
+	local new_bufs = {}
+	for _, buf in ipairs(bufs) do
+		local key = state.buf_table.buf2key[buf]
+		if key then
+			new_table:set(key, buf)
+		else -- New buffer (not yet in the buf_table and key not yet assigned)
+			table.insert(new_bufs, buf)
 		end
 	end
-	return nil
-end
-
-local function get_buffer_char(name, buffer_table, chars)
-	local char = name:sub(1, 1)
-	local i = 2
-	while buffer_table:get(char) or chars:find(char, 1, true) == nil do
-		if i > #name then
-			return nil
+	for _, buf in ipairs(new_bufs) do
+		local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":t")
+		local key = new_table:create_buf_key(name)
+		if not key then
+			notify(("No key available for %d buffer: '%s'"):format(buf, name), vim.log.levels.ERROR)
+			return
 		end
-		char = name:sub(i, i)
-		i = i + 1
-	end
-	return char
-end
-
-local function update_buf_table(bufs, chars)
-	for i, buf in ipairs(bufs) do
-		if not state.buf_table:get(buf) then
-			-- New buffer (not yet in the buf_table and key not yet assigned)
-
-			local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":t")
-			-- TODO: get available key, assign it and save entry in buf_table
-		end
+		new_table:set(key, buf)
 	end
 end
 
@@ -150,10 +131,9 @@ end
 
 ---Toggle buffers window
 function M.toggle()
-	vim.g.buffers_config = vim.g.buffers_config or {}
-	local opts = with_defaults(vim.g.buffers_config)
-	local bufs = vim.tbl_filter(opts.filter, vim.api.nvim_list_bufs())
-	update_buf_table(bufs, opts.chars)
+	set_defaults(vim.g.buffers_config or {})
+	local bufs = vim.tbl_filter(state.opts.filter, vim.api.nvim_list_bufs())
+	update_buf_table(bufs)
 
 	local win_config = get_win_config(opts, #bufs)
 	if win_config == nil then

@@ -1,3 +1,5 @@
+local state = require("buffers.state")
+
 ---@class buffers.BufTable
 ---@field key2buf table<string, number> Key to buf; Key is keycode
 ---@field buf2key table<number, string> Buf to key
@@ -17,7 +19,7 @@ function BufTable.new()
 	}, BufTable)
 end
 
----Create a new entry
+---Set or create an entry
 function BufTable:set(key, buf)
 	if self.key2buf[key] == nil then
 		table.insert(self.order, key)
@@ -50,6 +52,37 @@ function BufTable:remove_buf(buf)
 			return
 		end
 	end
+end
+
+---Create key from name
+---@param name string
+---@return string?
+function BufTable:create_buf_key(name)
+	local actual_name = name
+	local check_name = actual_name:lower()
+	local i = 1
+	local key = check_name:sub(i, i)
+	while self.key2buf[key] or string.find(state.opts.chars, key, 1, true) == nil do
+		if i > #check_name then
+			if check_name == actual_name then
+				-- Dumb method
+				for j = 1, #state.opts.chars do
+					key = string.sub(state.opts.chars, j, j)
+					if not self.key2buf[key] then
+						return key
+					end
+				end
+				return nil
+			end
+			i = 1
+			-- Lowercase letters are occupied, so try uppercase
+			check_name = actual_name:upper()
+		end
+		key = check_name:sub(i, i)
+		i = i + 1
+	end
+
+	return key
 end
 
 ---Ordered key and buf pairs iterator
