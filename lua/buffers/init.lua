@@ -26,7 +26,7 @@ local function set_defaults(opts)
 	state.opts.width = opts.width or { 0, 0.5 }
 	state.opts.height = opts.height or { 0, 0.5 }
 	state.opts.pos = opts.pos or "center_right"
-	state.opts.border = opts.border or "single"
+	state.opts.border = opts.border or vim.o.winborder
 	state.opts.win_opts = opts.win_opts or {}
 	state.opts.chars = opts.chars or "qwertyuiopasdfghjklzxcvbnm1234567890"
 	state.opts.filter = opts.filter or function(buf) return vim.fn.buflisted(buf) == 1 end
