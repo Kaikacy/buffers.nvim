@@ -1,18 +1,18 @@
 local M = {}
 
----@alias buffers.hl_range [string, integer, integer] hl-group, start and end column (0-based, end-exclusive)
----@alias buffers.formatter fun(full_name: string, buf: integer): string, buffers.hl_range[]?
+---@alias buffers.highlight [string, string[]|string] text, hl-group
+---@alias buffers.formatter fun(full_name: string, buf: integer): buffers.highlight[]
 
 ---@type buffers.formatter
 function M.relative_path(full_name)
 	local rel_path = vim.fn.fnamemodify(full_name, ":~:.")
 	local dir_name = vim.fn.fnamemodify(rel_path, ":h")
-
 	if dir_name == "." then
-		return rel_path
+		return { { rel_path, "NormalFloat" } }
 	end
 
-	return rel_path, { { "Comment", 0, #dir_name + 1 } }
+	local file_name = vim.fn.fnamemodify(rel_path, ":t")
+	return { { dir_name .. "/", "Comment" }, { file_name, "NormalFloat" } }
 end
 
 -- TODO
