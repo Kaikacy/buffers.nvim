@@ -96,7 +96,7 @@ local function register_buffers()
 		local icon, icon_hl, icon_segment
 		local icon_len = 0
 		if state.opts.icons then
-			icon, icon_hl = devicons.get_icon_color(
+			icon, icon_hl = devicons.get_icon(
 				vim.fn.fnamemodify(full_name, ":t"),
 				vim.fn.fnamemodify(full_name, ":e"),
 				{ default = true }
