@@ -18,6 +18,7 @@ local M = {}
 
 local devicons_loaded, devicons = pcall(require, "nvim-web-devicons")
 
+local utils = require("buffers.utils")
 local state = require("buffers.state")
 
 ---@param opts buffers.Config
@@ -32,12 +33,15 @@ local function set_defaults(opts)
 	state.opts.close_keys = opts.close_keys or { "<ESC>" }
 	state.opts.separator = opts.separator or " | "
 	state.opts.formatter = opts.formatter or "relative_path"
-	state.opts.icons = (opts.icons and devicons_loaded) or false
+	if devicons_loaded then
+		state.opts.icons = opts.icons
+	else
+		if opts.icons then
+			utils.notify("nvim-web-devicons is not loaded, but `icons` is enabled", vim.log.levels.WARN)
+		end
+		state.opts.icons = false
+	end
 end
-
----@param msg string
----@param level integer|nil
-local function notify(msg, level) vim.notify(msg, level, { title = "buffers.nvim" }) end
 
 local function update_buf_table(bufs)
 	local old_bufs = state.buf_table.buf_ord
@@ -56,8 +60,8 @@ local function update_buf_table(bufs)
 			local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":t")
 			local key = state.buf_table:create_buf_key(name, state.opts.chars)
 			if not key then
-				notify(("No key available for %d buffer: '%s'"):format(buf, name), vim.log.levels.ERROR)
-				notify("Try expanding `chars` list", vim.log.levels.INFO)
+				utils.notify(("No key available for %d buffer: '%s'"):format(buf, name), vim.log.levels.ERROR)
+				utils.notify("Try expanding `chars` list", vim.log.levels.INFO)
 				return true
 			end
 			state.buf_table.buf2key[buf] = key
@@ -70,7 +74,7 @@ local function register_buffers()
 	local format = type(state.opts.formatter) == "string" and require("buffers.formatters")[state.opts.formatter]
 		or state.opts.formatter
 	if not format then
-		notify(("Formatter '%s' is not available"):format(state.opts.formatter), vim.log.levels.ERROR)
+		utils.notify(("Formatter '%s' is not available"):format(state.opts.formatter), vim.log.levels.ERROR)
 		return true
 	end
 
@@ -129,32 +133,14 @@ local function register_buffers()
 	)
 end
 
-local function clamp(n, min, max) return math.min(math.max(min, n), max) end
-
-local function resolve_width(width)
-	if width > 0 and width <= 1 then
-		return vim.fn.round(vim.o.columns * width)
-	else
-		return width
-	end
-end
-
-local function resolve_height(height)
-	if height > 0 and height <= 1 then
-		return vim.fn.round(vim.o.lines * height)
-	else
-		return height
-	end
-end
-
 local function get_win_config()
 	local width = state.opts.width
 	if type(width) == "table" then
-		width = clamp(state.exact_width, resolve_width(width[1]), resolve_width(width[2]))
+		width = utils.clamp(state.exact_width, utils.resolve_width(width[1]), utils.resolve_width(width[2]))
 	end
 	local height = state.opts.height
 	if type(height) == "table" then
-		height = clamp(state.exact_height, resolve_height(height[1]), resolve_height(height[2]))
+		height = utils.clamp(state.exact_height, utils.resolve_height(height[1]), utils.resolve_height(height[2]))
 	end
 
 	local row, col = 0, vim.o.columns
@@ -166,7 +152,7 @@ local function get_win_config()
 		yanchor = "S"
 		row = vim.o.lines
 	else
-		notify("Invalid value for `pos` option", vim.log.levels.ERROR)
+		utils.notify("Invalid value for `pos` option", vim.log.levels.ERROR)
 		return
 	end
 
@@ -240,7 +226,7 @@ function M.toggle(action)
 		end
 
 		vim.api.nvim_win_hide(state.win)
-		notify(("No buffer bound to '%s'"):format(char), vim.log.levels.WARN)
+		utils.notify(("No buffer bound to '%s'"):format(char), vim.log.levels.WARN)
 	end)
 end
 
