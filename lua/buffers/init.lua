@@ -28,9 +28,7 @@ local function set_defaults(opts)
 	state.opts.border = opts.border or "single"
 	state.opts.win_opts = opts.win_opts or {}
 	state.opts.chars = opts.chars or "qwertyuiopasdfghjklzxcvbnm1234567890"
-	state.opts.filter = opts.filter or function(buf)
-		return vim.fn.buflisted(buf) == 1
-	end
+	state.opts.filter = opts.filter or function(buf) return vim.fn.buflisted(buf) == 1 end
 	state.opts.close_keys = opts.close_keys or { "<ESC>" }
 	state.opts.separator = opts.separator or " | "
 	state.opts.formatter = opts.formatter or "relative_path"
@@ -39,9 +37,7 @@ end
 
 ---@param msg string
 ---@param level integer|nil
-local function notify(msg, level)
-	vim.notify(msg, level, { title = "buffers.nvim" })
-end
+local function notify(msg, level) vim.notify(msg, level, { title = "buffers.nvim" }) end
 
 local function update_buf_table(bufs)
 	local old_bufs = state.buf_table.buf_ord
@@ -85,6 +81,7 @@ local function register_buffers()
 	for i, key, buf in state.buf_table:ordered_iter() do
 		local full_name = vim.api.nvim_buf_get_name(buf)
 		local segments = format(full_name, buf)
+
 		local icon, icon_color, icon_segment
 		local icon_len = 0
 		if state.opts.icons then
@@ -98,13 +95,16 @@ local function register_buffers()
 			vim.api.nvim_set_hl(state.ns_hl, "BuffersIcon" .. i, { fg = icon_color })
 			icon_segment = { icon, "BuffersIcon" .. i }
 		end
+
 		local text_len = 0
 		for _, segment in ipairs(segments) do
 			text_len = text_len + #segment[1]
 		end
 		state.exact_width = math.max(state.exact_width, #key + #state.opts.separator + icon_len + text_len)
+
 		-- Prepend key, separator and icon
 		segments = vim.list_extend({ { key .. state.opts.separator, "NormalFloat" }, icon_segment }, segments)
+
 		if i == 1 then
 			-- virt_lines displays below extmark, so first line should be virt_text
 			vim.api.nvim_buf_set_extmark(
@@ -120,6 +120,7 @@ local function register_buffers()
 
 		state.exact_height = i
 	end
+
 	vim.api.nvim_buf_set_extmark(
 		state.buf,
 		state.ns_hl,
@@ -129,9 +130,7 @@ local function register_buffers()
 	)
 end
 
-local function clamp(n, min, max)
-	return math.min(math.max(min, n), max)
-end
+local function clamp(n, min, max) return math.min(math.max(min, n), max) end
 
 local function resolve_width(width)
 	if width > 0 and width <= 1 then
@@ -189,6 +188,7 @@ end
 ---Toggle buffers window with custom action
 function M.toggle(action)
 	set_defaults(vim.g.buffers_config or {})
+
 	local bufs = vim.tbl_filter(state.opts.filter, vim.api.nvim_list_bufs())
 	if update_buf_table(bufs) then -- Error
 		return
@@ -206,9 +206,7 @@ function M.toggle(action)
 	end
 
 	local win_config = get_win_config()
-	if win_config == nil then
-		return
-	end
+	if win_config == nil then return end
 
 	if not vim.api.nvim_win_is_valid(state.win) then
 		state.win = vim.api.nvim_open_win(state.buf, false, win_config)
@@ -248,16 +246,12 @@ function M.toggle(action)
 end
 
 ---Switch to selected buffer
-function M.switch()
-	M.toggle(vim.api.nvim_set_current_buf)
-end
+function M.switch() M.toggle(vim.api.nvim_set_current_buf) end
 
 ---Delete selected buffer with :bdelete
 ---@param force boolean
 function M.delete(force)
-	M.toggle(function(buf)
-		vim.cmd.bdelete(buf .. "bdelete" .. force and "!" or "")
-	end)
+	M.toggle(function(buf) vim.cmd.bdelete(buf .. "bdelete" .. force and "!" or "") end)
 end
 
 return M

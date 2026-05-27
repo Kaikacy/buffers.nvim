@@ -19,9 +19,7 @@ end
 
 ---Set or create an entry
 function BufTable:set(key, buf)
-	if self.buf2key[buf] == nil then
-		table.insert(self.buf_ord, buf)
-	end
+	if self.buf2key[buf] == nil then table.insert(self.buf_ord, buf) end
 	self.key2buf[key] = buf
 	self.buf2key[buf] = key
 end
@@ -66,9 +64,7 @@ function BufTable:create_buf_key(name, chars)
 				-- Dumb method
 				for j = 1, #chars do
 					key = string.sub(chars, j, j)
-					if not self.key2buf[key] then
-						return key
-					end
+					if not self.key2buf[key] then return key end
 				end
 				return nil
 			end
@@ -89,9 +85,7 @@ function BufTable:ordered_iter()
 	return function()
 		i = i + 1
 		local buf = self.buf_ord[i]
-		if buf then
-			return i, self.buf2key[buf], buf
-		end
+		if buf then return i, self.buf2key[buf], buf end
 	end
 end
 

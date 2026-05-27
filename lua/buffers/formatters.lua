@@ -7,9 +7,7 @@ local M = {}
 function M.relative_path(full_name)
 	local rel_path = vim.fn.fnamemodify(full_name, ":~:.")
 	local dir_name = vim.fn.fnamemodify(rel_path, ":h")
-	if dir_name == "." then
-		return { { rel_path, "NormalFloat" } }
-	end
+	if dir_name == "." then return { { rel_path, "NormalFloat" } } end
 
 	local file_name = vim.fn.fnamemodify(rel_path, ":t")
 	return { { dir_name .. "/", "Comment" }, { file_name, "NormalFloat" } }
@@ -27,14 +25,10 @@ function M.filename_first(full_path)
 			vim.fn.fnamemodify(full_path, ":e"),
 			{ default = true }
 		)
-		if icon then
-			file_name = icon .. " " .. file_name
-		end
+		if icon then file_name = icon .. " " .. file_name end
 	end
 
-	if dir_name == "." then
-		return file_name
-	end
+	if dir_name == "." then return file_name end
 
 	local formatted = file_name .. " " .. dir_name
 	return formatted, { #formatted - #dir_name, #formatted }
