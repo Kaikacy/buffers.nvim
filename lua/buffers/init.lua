@@ -32,7 +32,21 @@ local function set_defaults(opts)
 	state.opts.filter = opts.filter or function(buf) return vim.fn.buflisted(buf) == 1 end
 	state.opts.close_keys = opts.close_keys or { "<ESC>" }
 	state.opts.separator = opts.separator or " | "
-	state.opts.formatter = opts.formatter or "relative_path"
+	state.opts.formatter = "relative_path"
+	state.format = require("buffers.formatters")[state.opts.formatter]
+	if opts.formatter then
+		state.opts.formatter = opts.formatter
+		if type(opts.formatter) == "string" then
+			local format = require("buffers.formatters")[opts.formatter]
+			if format then
+				state.format = format
+			else
+				utils.notify(("Formatter '%s' is not available"):format(opts.formatter), vim.log.levels.ERROR)
+			end
+		else -- Function
+			state.format = opts.formatter
+		end
+	end
 	if devicons_loaded then
 		state.opts.icons = opts.icons
 	else
@@ -71,20 +85,13 @@ local function update_buf_table(bufs)
 end
 
 local function register_buffers()
-	local format = type(state.opts.formatter) == "string" and require("buffers.formatters")[state.opts.formatter]
-		or state.opts.formatter
-	if not format then
-		utils.notify(("Formatter '%s' is not available"):format(state.opts.formatter), vim.log.levels.ERROR)
-		return true
-	end
-
 	vim.api.nvim_buf_clear_namespace(state.buf, state.ns_hl, 0, -1)
 
 	local lines = {}
 
 	for i, key, buf in state.buf_table:ordered_iter() do
 		local full_name = vim.api.nvim_buf_get_name(buf)
-		local segments = format(full_name, buf)
+		local segments = state.format(full_name, buf)
 
 		local icon, icon_hl, icon_segment
 		local icon_len = 0
