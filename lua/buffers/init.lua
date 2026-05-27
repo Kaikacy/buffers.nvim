@@ -45,27 +45,30 @@ local function notify(msg, level)
 end
 
 local function update_buf_table(bufs)
-	local new_table = buf_table.new()
-	local new_bufs = {}
+	local old_bufs = state.buf_table.buf_ord
+	state.buf_table.buf_ord = bufs -- Invalid state
+	-- Delete old entries
+	for _, old_buf in ipairs(old_bufs) do
+		if not vim.list_contains(bufs, old_buf) then
+			local key = state.buf_table.buf2key[old_buf]
+			state.buf_table.buf2key[old_buf] = nil
+			state.buf_table.key2buf[key] = nil
+		end
+	end
+	-- Add new entries
 	for _, buf in ipairs(bufs) do
-		local key = state.buf_table.buf2key[buf]
-		if key then
-			new_table:set(key, buf)
-		else -- New buffer (not yet in the buf_table and key not yet assigned)
-			table.insert(new_bufs, buf)
+		if not state.buf_table.buf2key[buf] then
+			local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":t")
+			local key = state.buf_table:create_buf_key(name, state.opts.chars)
+			if not key then
+				notify(("No key available for %d buffer: '%s'"):format(buf, name), vim.log.levels.ERROR)
+				notify("Try expanding `chars` list", vim.log.levels.INFO)
+				return true
+			end
+			state.buf_table.buf2key[buf] = key
+			state.buf_table.key2buf[key] = buf
 		end
 	end
-	for _, buf in ipairs(new_bufs) do
-		local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":t")
-		local key = new_table:create_buf_key(name, state.opts.chars)
-		if not key then
-			notify(("No key available for %d buffer: '%s'"):format(buf, name), vim.log.levels.ERROR)
-			notify("Try expanding `chars` list", vim.log.levels.INFO)
-			return true
-		end
-		new_table:set(key, buf)
-	end
-	state.buf_table = new_table
 end
 
 local function register_buffers()
