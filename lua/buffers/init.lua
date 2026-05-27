@@ -226,7 +226,7 @@ function M.toggle(action)
 		end
 
 		vim.api.nvim_win_hide(state.win)
-		utils.notify(("No buffer bound to '%s'"):format(char), vim.log.levels.WARN)
+		utils.notify(("No buffer bound to '%s'"):format(vim.fn.keytrans(char)), vim.log.levels.WARN)
 	end)
 end
 
