@@ -9,10 +9,11 @@
 ---@field win_opts? table Additional window local options
 ---@field chars? string Characters to use for mappings
 ---@field filter? fun(buf: integer): boolean Checks if buf should be included in buffers table
----@field close_keys? string[] Which keys will hide buffers window, without warning, when pressed
+---@field close_keys? string[] Which keys will hide buffers window without warning
 ---@field separator? string Separator between char and buffer name
 ---@field formatter? 'relative_path'|'filename_first'|buffers.formatter How to format buffer name
 ---@field icons? boolean Whether to show icons or not
+---@field active_char_hl? string Highlight group to use for the char of active buffer
 
 local M = {}
 
@@ -32,6 +33,7 @@ local function set_defaults(opts)
 	state.opts.filter = opts.filter or function(buf) return vim.fn.buflisted(buf) == 1 end
 	state.opts.close_keys = opts.close_keys or { "<ESC>" }
 	state.opts.separator = opts.separator or " | "
+	state.opts.active_char_hl = opts.active_char_hl or "Comment"
 	state.opts.formatter = "relative_path"
 	state.format = require("buffers.formatters")[state.opts.formatter]
 	if opts.formatter then
@@ -87,6 +89,8 @@ end
 local function register_buffers()
 	vim.api.nvim_buf_clear_namespace(state.buf, state.ns_hl, 0, -1)
 
+	local curr_buf = vim.api.nvim_get_current_buf()
+
 	local lines = {}
 
 	for i, key, buf in state.buf_table:ordered_iter() do
@@ -113,7 +117,11 @@ local function register_buffers()
 		state.exact_width = math.max(state.exact_width, #key + #state.opts.separator + icon_len + text_len)
 
 		-- Prepend key, separator and icon
-		segments = vim.list_extend({ { key .. state.opts.separator, "NormalFloat" }, icon_segment }, segments)
+		segments = vim.list_extend({
+			{ key, buf == curr_buf and state.opts.active_char_hl or "NormalFloat" },
+			{ state.opts.separator, "NormalFloat" },
+			icon_segment,
+		}, segments)
 
 		if i == 1 then
 			-- virt_lines displays below extmark, so first line should be virt_text
