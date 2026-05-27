@@ -10,10 +10,10 @@
 ---@field chars? string Characters to use for mappings
 ---@field filter? fun(buf: integer): boolean Checks if buf should be included in buffers table
 ---@field close_keys? string[] Which keys will hide buffers window without warning
----@field separator? string Separator between char and buffer name
+---@field separator? string Separator between key and buffer name
 ---@field formatter? 'relative_path'|'filename_first'|buffers.formatter How to format buffer name
 ---@field icons? boolean Whether to show icons or not
----@field active_char_hl? string Highlight group to use for the char of active buffer
+---@field active_key_hl? string Highlight group to use for the key of active buffer
 
 local M = {}
 
@@ -33,7 +33,7 @@ local function set_defaults(opts)
 	state.opts.filter = opts.filter or function(buf) return vim.fn.buflisted(buf) == 1 end
 	state.opts.close_keys = opts.close_keys or { "<ESC>" }
 	state.opts.separator = opts.separator or " | "
-	state.opts.active_char_hl = opts.active_char_hl or "Comment"
+	state.opts.active_key_hl = opts.active_key_hl or "Comment"
 	state.opts.formatter = "relative_path"
 	state.format = require("buffers.formatters")[state.opts.formatter]
 	if opts.formatter then
@@ -118,7 +118,7 @@ local function register_buffers()
 
 		-- Prepend key, separator and icon
 		segments = vim.list_extend({
-			{ key, buf == curr_buf and state.opts.active_char_hl or "NormalFloat" },
+			{ key, buf == curr_buf and state.opts.active_key_hl or "NormalFloat" },
 			{ state.opts.separator, "NormalFloat" },
 			icon_segment,
 		}, segments)
