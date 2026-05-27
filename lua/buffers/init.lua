@@ -82,18 +82,17 @@ local function register_buffers()
 		local full_name = vim.api.nvim_buf_get_name(buf)
 		local segments = format(full_name, buf)
 
-		local icon, icon_color, icon_segment
+		local icon, icon_hl, icon_segment
 		local icon_len = 0
 		if state.opts.icons then
-			icon, icon_color = devicons.get_icon_color(
+			icon, icon_hl = devicons.get_icon_color(
 				vim.fn.fnamemodify(full_name, ":t"),
 				vim.fn.fnamemodify(full_name, ":e"),
 				{ default = true }
 			)
 			icon = icon .. " "
 			icon_len = vim.fn.strdisplaywidth(icon)
-			vim.api.nvim_set_hl(state.ns_hl, "BuffersIcon" .. i, { fg = icon_color })
-			icon_segment = { icon, "BuffersIcon" .. i }
+			icon_segment = { icon, icon_hl }
 		end
 
 		local text_len = 0
