@@ -16,7 +16,6 @@
 
 local M = {}
 
-local buf_table = require("buffers.buf-table")
 local devicons_loaded, devicons = pcall(require, "nvim-web-devicons")
 
 local state = require("buffers.state")
@@ -79,41 +78,55 @@ local function register_buffers()
 		return true
 	end
 
-	vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, {})
+	vim.api.nvim_buf_clear_namespace(state.buf, state.ns_hl, 0, -1)
+
+	local lines = {}
 
 	for i, key, buf in state.buf_table:ordered_iter() do
 		local full_name = vim.api.nvim_buf_get_name(buf)
-		local text, ranges = format(full_name, buf)
-		local icon = ""
+		local segments = format(full_name, buf)
+		local icon, icon_color, icon_segment
+		local icon_len = 0
 		if state.opts.icons then
-			icon = devicons.get_icon(
+			icon, icon_color = devicons.get_icon_color(
 				vim.fn.fnamemodify(full_name, ":t"),
 				vim.fn.fnamemodify(full_name, ":e"),
 				{ default = true }
-			) .. " "
+			)
+			icon = icon .. " "
+			icon_len = vim.fn.strdisplaywidth(icon)
+			vim.api.nvim_set_hl(state.ns_hl, "BuffersIcon" .. i, { fg = icon_color })
+			icon_segment = { icon, "BuffersIcon" .. i }
 		end
-		local line = key .. state.opts.separator .. icon .. text
-		state.exact_width = math.max(state.exact_width, vim.fn.strcharlen(line)) -- Display width; Not bytes
-		local text_start = #key + #state.opts.separator + #icon
-
-		-- Multiple calls might be insigificantly slower than collecting lines and calling once, even with extra for-loop to set extmarks
-		-- But this is simpler and cleaner
-		vim.api.nvim_buf_set_lines(state.buf, i - 1, i - 1, false, { line })
-
-		if ranges then
-			for _, range in ipairs(ranges) do
-				-- Expects sizes in bytes
-				vim.api.nvim_buf_set_extmark(
-					state.buf,
-					state.ns_hl,
-					i - 1,
-					text_start + range[2],
-					{ end_col = text_start + range[3], hl_group = range[1] }
-				)
-			end
+		local text_len = 0
+		for _, segment in ipairs(segments) do
+			text_len = text_len + #segment[1]
 		end
+		state.exact_width = math.max(state.exact_width, #key + #state.opts.separator + icon_len + text_len)
+		-- Prepend key, separator and icon
+		segments = vim.list_extend({ { key .. state.opts.separator, "NormalFloat" }, icon_segment }, segments)
+		if i == 1 then
+			-- virt_lines displays below extmark, so first line should be virt_text
+			vim.api.nvim_buf_set_extmark(
+				state.buf,
+				state.ns_hl,
+				0,
+				0,
+				{ virt_text = segments, virt_text_win_col = 0, strict = false }
+			)
+		else
+			table.insert(lines, segments)
+		end
+
 		state.exact_height = i
 	end
+	vim.api.nvim_buf_set_extmark(
+		state.buf,
+		state.ns_hl,
+		0,
+		0,
+		{ virt_lines = lines, virt_lines_leftcol = true, strict = false }
+	)
 end
 
 local function clamp(n, min, max)
@@ -199,6 +212,7 @@ function M.toggle(action)
 
 	if not vim.api.nvim_win_is_valid(state.win) then
 		state.win = vim.api.nvim_open_win(state.buf, false, win_config)
+		vim.api.nvim_win_set_hl_ns(state.win, state.ns_hl)
 		for key, val in pairs(state.opts.win_opts) do
 			vim.wo[state.win][key] = val
 		end
