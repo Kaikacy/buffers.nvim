@@ -184,10 +184,11 @@ local function get_win_config()
 end
 
 ---@param action fun(buf: integer): any
+---@param config? buffers.Config
 ---@return any
 ---Toggle buffers window with custom action
-function M.toggle(action)
-	set_defaults(vim.g.buffers_config or {})
+function M.toggle(action, config)
+	set_defaults(vim.tbl_deep_extend("force", vim.g.buffers_config or {}, config))
 
 	local bufs = vim.tbl_filter(state.opts.filter, vim.api.nvim_list_bufs())
 	if update_buf_table(bufs) then -- Error
@@ -246,12 +247,14 @@ function M.toggle(action)
 end
 
 ---Switch to selected buffer
-function M.switch() M.toggle(vim.api.nvim_set_current_buf) end
+---@param config? buffers.Config
+function M.switch(config) M.toggle(vim.api.nvim_set_current_buf, config) end
 
 ---Delete selected buffer with :bdelete
 ---@param force boolean
-function M.delete(force)
-	M.toggle(function(buf) vim.cmd.bdelete(buf .. "bdelete" .. force and "!" or "") end)
+---@param config? buffers.Config
+function M.delete(force, config)
+	M.toggle(function(buf) vim.cmd.bdelete(buf .. "bdelete" .. force and "!" or "") end, config)
 end
 
 return M
