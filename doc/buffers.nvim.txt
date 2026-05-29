@@ -1,0 +1,136 @@
+*buffers.nvim.txt                                            buffers.nvim docs
+
+==============================================================================
+Table of Contents                             *buffers.nvim-table-of-contents*
+
+1. Buffers.nvim                                    |buffers.nvim-buffers-nvim|
+  - About                                         |buffers.nvim-buffers-about|
+  - Requirements                           |buffers.nvim-buffers-requirements|
+  - Installation                           |buffers.nvim-buffers-installation|
+  - Usage                                         |buffers.nvim-buffers-usage|
+  - Configuration                         |buffers.nvim-buffers-configuration|
+
+==============================================================================
+1. Buffers.nvim                                    *buffers.nvim-buffers-nvim*
+
+Simple neovim plugin for efficient buffer switching and management.
+
+
+ABOUT                                             *buffers.nvim-buffers-about*
+
+At its core *buffers.nvim* just assignes single key to every (filtered) buffer
+and displays them in floating window. After selecting a key, custom function
+is called with associated buffer and floating window is closed. Thats it.
+
+
+REQUIREMENTS                               *buffers.nvim-buffers-requirements*
+
+- `nvim-web-devicons` plugin only for `icons` option, not strictly required
+
+
+INSTALLATION                               *buffers.nvim-buffers-installation*
+
+Use your preferred package manager to install. Lazy loading is unnecessary, as
+*buffers.nvim* does not load anything on neovim startup.
+
+
+USAGE                                             *buffers.nvim-buffers-usage*
+
+*Buffers.nvim* provides single function, `toggle`, and several wrappers for
+ease of use. All of them take `config` argument to override configuration for
+single run.
+
+>lua
+    -- Execute custom action with selected buffer
+    require("buffers").toggle(function(buf)
+	print(vim.api.nvim_buf_get_name(buf))
+    end)
+
+    -- Switch to selected buffer
+    require("buffers").switch()
+
+    -- Delete selected buffer using :bdelete
+    -- Pass truthy value as 1st argument to force delete
+    require("buffers").delete()
+<
+
+I recommend using single keypress mappings, like `<TAB>` and `<S-TAB>`.
+>lua
+    -- From my config
+    local buffers = require("buffers")
+    vim.keymap.set("n", "<TAB>", buffers.switch)
+    vim.keymap.set("n", "<S-TAB>", buffers.delete)
+
+    -- <TAB> and <C-i> are equivalent by default (:help tab)
+    -- This mapping removes that behavior
+    vim.keymap.set("n", "<C-i>", "<C-i>")
+<
+
+
+CONFIGURATION                             *buffers.nvim-buffers-configuration*
+
+*Buffers.nvim* does not provide `setup` function. Instead configuration is read
+from `vim.g.buffers_config` table and `config` argument overrules it.
+
+Here are the type annotations with descriptions and default values:
+>lua
+    ---@alias buffers.size number|[number, number]
+    ---@alias buffers.pos 'center_right'|'bottom_right'|'top_right'
+
+    ---@class buffers.Config
+    ---@field width? buffers.size Window width or min, max bounds
+    ---@field height? buffers.size Window height or min, max bounds
+    ---@field pos? buffers.pos Window position
+    ---@field border? 'none'|'single'|'double'|'rounded'|'solid'|'shadow'|string[] Window border
+    ---@field win_opts? table Additional window local options
+    ---@field chars? string Characters to use for mappings
+    ---@field filter? fun(buf: integer): boolean Checks if buf should be included in buffers table
+    ---@field close_keys? string[] Which keys will hide buffers window without warning
+    ---@field separator? string Separator between key and buffer name
+    ---@field formatter? 'relative_path'|'filename_first'|buffers.formatter How to format and highlight buffer name
+    ---@field icons? boolean Whether to show icons or not
+    ---@field active_key_hl? string Highlight group to use for the key of active buffer
+    {
+        width = { 0, 0.5 },
+        height = { 0, 0.5 },
+        pos = "center_right",
+        border = vim.o.winborder,
+        win_opts = {},
+        chars = "qwertyuiopasdfghjklzxcvbnm1234567890",
+        filter = function(buf) return vim.fn.buflisted(buf) == 1 end,
+        close_keys = { "<ESC>" },
+        separator = " | ",
+        formatter = "relative_path",
+        icons = false,
+        active_key_hl = "Cursor"
+    }
+<
+
+SIZE RESOLUTION ~
+
+`width` and `height` options use either single number or lower and upper
+bounds, which -- I assume -- is easily understandable. Values are
+handled as follows:
+  - If `0 < value <= 1` then value is assumed to be fraction of whole neovim screen
+  - If `value > 1` then value is used as line/column count
+
+FORMATTERS ~
+
+I tried to maximize power custom formatters give to user, while maintaining
+simplicity. For each buffer formatter returns list of segments, where segment
+is tuple `[text, hl-group]`. Texts are concatinated and highlights are
+applied.
+
+>lua
+    -- builtin 'filename_first' formatter implementation
+    local function filename_first(full_path, buf)
+	local file_name = vim.fn.fnamemodify(full_path, ":t")
+	local path_head = vim.fn.fnamemodify(full_path, ":~:.:h")
+	if path_head == "." then return { { file_name, "NormalFloat" } } end
+
+	return { { file_name .. " ", "NormalFloat" }, { path_head, "Comment" } }
+    end
+<
+
+
+vim:tw=78:ts=8:noet:ft=help:norl:

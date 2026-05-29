@@ -11,7 +11,7 @@
 ---@field filter? fun(buf: integer): boolean Checks if buf should be included in buffers table
 ---@field close_keys? string[] Which keys will hide buffers window without warning
 ---@field separator? string Separator between key and buffer name
----@field formatter? 'relative_path'|'filename_first'|buffers.formatter How to format buffer name
+---@field formatter? 'relative_path'|'filename_first'|buffers.formatter How to format and highlight buffer name
 ---@field icons? boolean Whether to show icons or not
 ---@field active_key_hl? string Highlight group to use for the key of active buffer
 
