@@ -33,7 +33,7 @@ local function set_defaults(opts)
 	state.opts.filter = opts.filter or function(buf) return vim.fn.buflisted(buf) == 1 end
 	state.opts.close_keys = opts.close_keys or { "<ESC>" }
 	state.opts.separator = opts.separator or " | "
-	state.opts.active_key_hl = opts.active_key_hl or "Comment"
+	state.opts.active_key_hl = opts.active_key_hl or "Cursor"
 	state.opts.formatter = "relative_path"
 	state.format = require("buffers.formatters")[state.opts.formatter]
 	if opts.formatter then
