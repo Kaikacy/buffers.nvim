@@ -188,7 +188,8 @@ end
 ---@return any
 ---Toggle buffers window with custom action
 function M.toggle(action, config)
-	set_defaults(vim.tbl_deep_extend("force", vim.g.buffers_config or {}, config))
+	if config then config = vim.tbl_deep_extend("force", vim.g.buffers_config or {}, config) end
+	set_defaults(config or vim.g.buffers_config or {})
 
 	local bufs = vim.tbl_filter(state.opts.filter, vim.api.nvim_list_bufs())
 	if update_buf_table(bufs) then -- Error
