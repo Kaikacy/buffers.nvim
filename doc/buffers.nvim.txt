@@ -12,6 +12,7 @@ Buffers.nvim                                       |buffers.nvim-buffers-nvim|
 Internals                                             |buffers.nvim-internals|
   - Key generation                     |buffers.nvim-internals-key-generation|
   - Buffer table                         |buffers.nvim-internals-buffer-table|
+  - Display                                   |buffers.nvim-internals-display|
 
 ==============================================================================
 Buffers.nvim                                       *buffers.nvim-buffers-nvim*
@@ -159,6 +160,15 @@ order. New key is *not* generated on every run, but only for new buffers,
 so key-buffer mappings will stay the same for whole nvim session.
 When already mapped buffer gets excluded from new `buf_table`, its key is
 freed (becomes available).
+
+
+DISPLAY                                       *buffers.nvim-internals-display*
+
+For actually displaying key-buffer mappings, virtual lines are used. As
+virtual text and lines take list of `[text, hl-group]` pair, I can directly
+pass formatter output to it, although I first prepend key, separator and
+possibly icon. Also, virtual lines are drawn below or above extmark, so
+virtual text is used for first line.
 
 
 vim:tw=78:ts=8:noet:ft=help:norl:
