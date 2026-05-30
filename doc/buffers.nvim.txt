@@ -3,7 +3,7 @@
 ==============================================================================
 Table of Contents                             *buffers.nvim-table-of-contents*
 
-Buffers.nvim                                       |buffers.nvim-buffers-nvim|
+buffers.nvim                                       |buffers.nvim-buffers-nvim|
   - About                                         |buffers.nvim-buffers-about|
   - Requirements                           |buffers.nvim-buffers-requirements|
   - Installation                           |buffers.nvim-buffers-installation|
@@ -15,14 +15,15 @@ Internals                                             |buffers.nvim-internals|
   - Display                                   |buffers.nvim-internals-display|
 
 ==============================================================================
-Buffers.nvim                                       *buffers.nvim-buffers-nvim*
+buffers.nvim                                       *buffers.nvim-buffers-nvim*
 
+*buffers.nvim*:
 Simple neovim plugin for efficient buffer switching and management.
 
 
 ABOUT                                             *buffers.nvim-buffers-about*
 
-At its core *buffers.nvim* just assignes single key to every (filtered) buffer
+At its core buffers.nvim just assignes single key to every (filtered) buffer
 and displays them in floating window. After selecting a key, custom function
 is called with associated buffer and floating window is closed. Thats it.
 
@@ -35,12 +36,12 @@ REQUIREMENTS                               *buffers.nvim-buffers-requirements*
 INSTALLATION                               *buffers.nvim-buffers-installation*
 
 Use your preferred package manager to install. Lazy loading is unnecessary, as
-*buffers.nvim* does not load anything on neovim startup.
+buffers.nvim does not load anything on neovim startup.
 
 
 USAGE                                             *buffers.nvim-buffers-usage*
 
-*Buffers.nvim* provides single function, `toggle`, and several wrappers for
+buffers.nvim provides single function, `toggle`, and several wrappers for
 ease of use. All of them take `config` argument to override configuration for
 single run.
 
@@ -73,7 +74,7 @@ I recommend using single keypress mappings, like `<TAB>` and `<S-TAB>`.
 
 CONFIGURATION                             *buffers.nvim-buffers-configuration*
 
-*Buffers.nvim* does not provide `setup` function. Instead configuration is read
+buffers.nvim does not provide `setup` function. Instead configuration is read
 from `vim.g.buffers_config` table and `config` argument overrules it.
 
 Here are the type annotations with descriptions and default values:
@@ -156,7 +157,7 @@ then `o` and so on (assuming they are in `chars`).
 BUFFER TABLE                             *buffers.nvim-internals-buffer-table*
 
 Buffer table (or just `buf_table`) holds key and buffer mappings and their
-order. New key is *not* generated on every run, but only for new buffers,
+order. New key is NOT generated on every run, but only for new buffers,
 so key-buffer mappings will stay the same for whole nvim session.
 When already mapped buffer gets excluded from new `buf_table`, its key is
 freed (becomes available).
