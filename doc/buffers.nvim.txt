@@ -3,15 +3,18 @@
 ==============================================================================
 Table of Contents                             *buffers.nvim-table-of-contents*
 
-1. Buffers.nvim                                    |buffers.nvim-buffers-nvim|
+Buffers.nvim                                       |buffers.nvim-buffers-nvim|
   - About                                         |buffers.nvim-buffers-about|
   - Requirements                           |buffers.nvim-buffers-requirements|
   - Installation                           |buffers.nvim-buffers-installation|
   - Usage                                         |buffers.nvim-buffers-usage|
   - Configuration                         |buffers.nvim-buffers-configuration|
+Internals                                             |buffers.nvim-internals|
+  - Key generation                     |buffers.nvim-internals-key-generation|
+  - Buffer table                         |buffers.nvim-internals-buffer-table|
 
 ==============================================================================
-1. Buffers.nvim                                    *buffers.nvim-buffers-nvim*
+Buffers.nvim                                       *buffers.nvim-buffers-nvim*
 
 Simple neovim plugin for efficient buffer switching and management.
 
@@ -131,6 +134,31 @@ applied.
 	return { { file_name .. " ", "NormalFloat" }, { path_head, "Comment" } }
     end
 <
+
+
+==============================================================================
+Internals                                             *buffers.nvim-internals*
+
+How things work under the hood.
+
+
+KEY GENERATION                         *buffers.nvim-internals-key-generation*
+
+I tried key generation to be somewhat smart, but also fast. It pickes first
+available letter from file name, that is in `chars`. First, it tries to use
+lowercase letters if possible, otherwise uses uppercase. As a last resort,
+it fallback to dumbest method to just get firt free (available) letter from
+`chars`. For example, for file named `Foo.txt` lowercase `f` is tried first,
+then `o` and so on (assuming they are in `chars`).
+
+
+BUFFER TABLE                             *buffers.nvim-internals-buffer-table*
+
+Buffer table (or just `buf_table`) holds key and buffer mappings and their
+order. New key is *not* generated on every run, but only for new buffers,
+so key-buffer mappings will stay the same for whole nvim session.
+When already mapped buffer gets excluded from new `buf_table`, its key is
+freed (becomes available).
 
 
 vim:tw=78:ts=8:noet:ft=help:norl:
