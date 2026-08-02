@@ -30,7 +30,8 @@ local function set_defaults(opts)
 	state.opts.border = opts.border or vim.o.winborder
 	state.opts.win_opts = opts.win_opts or {}
 	state.opts.chars = opts.chars or "qwertyuiopasdfghjklzxcvbnm1234567890"
-	state.opts.filter = opts.filter or function(buf) return vim.fn.buflisted(buf) == 1 end
+	state.opts.filter = opts.filter
+		or function(buf) return vim.fn.buflisted(buf) == 1 and vim.api.nvim_buf_get_name(buf) ~= "" end
 	state.opts.close_keys = opts.close_keys or { "<ESC>" }
 	state.opts.separator = opts.separator or " | "
 	state.opts.active_key_hl = opts.active_key_hl or "Cursor"
